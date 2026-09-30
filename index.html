@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gobiman</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#fafbfc; --soft:#f4f5f8; --line:#e7e9ef; --line2:#d8dbe4;
+  --text:#0f172a; --text2:#334155; --muted:#6b7280; --faint:#9aa1ae;
+  --accent:#4f46e5; --accent-soft:#eef2ff; --accent-line:#c7d2fe;
+  --ok:#16a34a; --ok-soft:#ecfdf3; --warn:#d97706; --warn-soft:#fffbeb; --err:#dc2626; --err-soft:#fef2f2;
+  --link:#c026d3;
+  --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:13px/1.45 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+input{font:inherit;color:inherit}
+::selection{background:#dbe3ff}
+
+/* ---------- top bar ---------- */
+#top{height:54px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--line);background:#fff;position:relative;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:0 1 auto}
+.brand svg{flex:none}
+.brand .t{font-weight:650;font-size:14px;letter-spacing:-.01em;white-space:nowrap}
+.brand .c{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw;font-size:12.5px}
+.brand select{border:1px solid var(--line);border-radius:7px;padding:4px 6px;background:#fff;max-width:30vw;font-size:12.5px;color:var(--text2)}
+.gsearch{flex:1;max-width:520px;margin:0 auto;position:relative}
+.gsearch input{width:100%;height:34px;border:1px solid var(--line);border-radius:9px;background:var(--soft);padding:0 44px 0 34px;outline:none;transition:.15s}
+.gsearch input:focus{background:#fff;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.gsearch>svg{position:absolute;left:11px;top:10px;color:var(--faint)}
+.gsearch kbd{position:absolute;right:9px;top:8px;font:11px var(--sans);color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:0 5px;background:#fff}
+#gres{position:absolute;top:40px;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:62vh;overflow:auto;padding:6px;display:none}
+#gres.on{display:block}
+#gres h6{margin:8px 8px 4px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.gr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer}
+.gr:hover,.gr.act{background:var(--soft)}
+.gr .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gr .sub{color:var(--faint);font-size:11.5px;white-space:nowrap}
+.gr .cnt{font-size:11px;background:#fef9c3;border-radius:20px;padding:1px 7px;color:#854d0e;white-space:nowrap}
+.gempty{padding:14px;color:var(--muted);text-align:center}
+.actions{display:flex;gap:8px;align-items:center;flex:none}
+.btn{height:32px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:8px;display:inline-flex;align-items:center;gap:6px;font-weight:500;white-space:nowrap;transition:.12s;position:relative}
+.btn:hover{background:var(--soft);border-color:var(--line2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:#4338ca}
+.btn.sm{height:26px;padding:0 9px;font-size:12px;border-radius:7px}
+.btn.ghost{border-color:transparent}
+.btn.stop{background:var(--err);border-color:var(--err);color:#fff}
+.btn .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--warn);border:2px solid #fff}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* ---------- layout ---------- */
+.app{display:flex;height:calc(100vh - 54px)}
+#side{width:292px;flex:none;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+#side .hd{padding:10px 14px 6px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600;display:flex;justify-content:space-between}
+#tree{overflow:auto;padding:0 6px 14px;flex:1}
+.tn{display:flex;align-items:center;gap:6px;height:28px;padding-right:8px;border-radius:7px;cursor:pointer;white-space:nowrap;padding-left:calc(6px + var(--d)*14px)}
+.tn:hover{background:#eef0f4}
+.tn.sel{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-line)}
+.tn .nm{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.tn.folder .nm{font-weight:600;color:var(--text2)}
+.tn .tw{width:14px;height:14px;flex:none;display:grid;place-items:center;color:var(--faint);transition:transform .12s}
+.tn .tw.open{transform:rotate(90deg)}
+.tn .ct{font-size:10.5px;color:var(--faint)}
+.m{font:700 9.5px/1 var(--mono);letter-spacing:.02em;flex:none;width:30px;text-align:left}
+.m.GET{color:#15803d}.m.POST{color:#2563eb}.m.PUT{color:#b45309}.m.PATCH{color:#7c3aed}.m.DELETE{color:#dc2626}.m.X{color:#475569}
+.mb{font:700 10.5px/1 var(--mono);padding:4px 7px;border-radius:6px;flex:none}
+.mb.GET{color:#15803d;background:#ecfdf3}.mb.POST{color:#2563eb;background:#eff6ff}.mb.PUT{color:#b45309;background:#fffbeb}.mb.PATCH{color:#7c3aed;background:#f5f3ff}.mb.DELETE{color:#dc2626;background:#fef2f2}.mb.X{color:#475569;background:#f1f5f9}
+.sd{width:8px;height:8px;border-radius:50%;flex:none;background:#d5d9e2}
+.sd.ok{background:var(--ok)}.sd.warn{background:var(--warn)}.sd.err{background:var(--err)}
+.sd.run{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
+
+#main{flex:1;min-width:0;display:flex;flex-direction:column;background:#fff}
+#mhead{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--soft);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:4px 11px;border-radius:7px;font-weight:500;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(15,23,42,.12)}
+#stats{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border:1px solid var(--line);border-radius:20px;font-size:11.5px;color:var(--text2);background:#fff;white-space:nowrap}
+.chip b{font-weight:650}
+.chip.ok{border-color:#bbf7d0;background:var(--ok-soft);color:#166534}
+.chip.err{border-color:#fecaca;background:var(--err-soft);color:#991b1b}
+.chip.warn{border-color:#fde68a;background:var(--warn-soft);color:#92400e}
+.chip.link{border-color:#f0abfc;background:#fdf4ff;color:#86198f;cursor:pointer;user-select:none}
+.chip.link.off{opacity:.45}
+.chip.link i{width:16px;border-top:2px dashed var(--link)}
+#banner{display:none;margin:10px 14px 0;padding:8px 12px;border:1px solid #fde68a;background:var(--warn-soft);border-radius:10px;color:#92400e;align-items:center;gap:10px}
+#banner.on{display:flex}
+#banner span{flex:1}
+#stage{flex:1;position:relative;min-height:0}
+#map,#seq{position:absolute;inset:0}
+#map{cursor:grab;background:radial-gradient(circle,#e3e6ee 1px,transparent 1.2px) 0 0/22px 22px}
+#map.drag{cursor:grabbing}
+#map svg{width:100%;height:100%;display:block;user-select:none}
+#seq{overflow:auto;padding:14px 16px 40px;display:none}
+#seq svg{display:block;margin:0 auto}
+#zoom{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+#zoom button{width:32px;height:30px;border:0;background:#fff;font-size:15px;color:var(--text2)}
+#zoom button:hover{background:var(--soft)}
+#zoom button+button{border-top:1px solid var(--line)}
+#hint{position:absolute;left:14px;bottom:14px;font-size:11.5px;color:var(--faint);background:rgba(255,255,255,.85);padding:3px 8px;border-radius:7px;pointer-events:none}
+
+/* map nodes */
+.mn{cursor:pointer}
+.mn rect.b{transition:stroke .1s,filter .1s}
+.mn:hover rect.b{filter:drop-shadow(0 2px 5px rgba(15,23,42,.14))}
+.mn.sel rect.b{stroke:var(--accent)!important;stroke-width:2;filter:drop-shadow(0 0 0 rgba(0,0,0,0)) drop-shadow(0 3px 9px rgba(79,70,229,.28))}
+.mn text{font-family:var(--sans);pointer-events:none}
+.mn .tg{cursor:pointer}
+.mn .tg circle{fill:#fff;stroke:var(--line2)}
+.mn .tg:hover circle{stroke:var(--accent)}
+.tl{fill:none;stroke:#cfd4df;stroke-width:1.4}
+.dl{fill:none;stroke:var(--link);stroke-width:1.4;stroke-dasharray:5 4;opacity:.8}
+.dl:hover{opacity:1;stroke-width:2.2}
+.meta{font:11px var(--mono);fill:var(--muted)}
+/* sequence */
+.sr{cursor:pointer}
+.sr .bg{fill:transparent}
+.sr:hover .bg{fill:#f6f7fb}
+.sr.sel .bg{fill:var(--accent-soft);stroke:var(--accent-line)}
+#seq text{font-family:var(--sans)}
+
+/* ---------- inspector ---------- */
+#split{width:5px;flex:none;cursor:col-resize;background:transparent;border-left:1px solid var(--line);display:none}
+#split:hover,#split.on{background:var(--accent-line)}
+#insp{width:var(--iw,46vw);min-width:380px;max-width:72vw;flex:none;display:none;flex-direction:column;min-height:0;background:#fff}
+body.has-insp #insp{display:flex}
+body.has-insp #split{display:block}
+.ih{padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.crumb{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
+.ih h2{margin:0;font-size:16px;letter-spacing:-.01em;font-weight:650;display:flex;gap:9px;align-items:center}
+.ih h2 .x{margin-left:auto;display:flex;gap:6px;flex:none}
+.ih h2 span.nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.url{margin-top:9px;font:12px/1.5 var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:7px 10px;word-break:break-all;color:var(--text2)}
+.var{background:#e0e7ff;color:#3730a3;border-radius:4px;padding:0 3px}
+.var.miss{background:#fee2e2;color:#991b1b}
+.desc{margin-top:9px;color:var(--text2);white-space:pre-wrap;font-size:12.5px;max-height:132px;overflow:auto}
+.conn{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
+.conn .chip{cursor:pointer}
+.conn .chip:hover{border-color:var(--link)}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:9px 10px;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--text);border-bottom-color:var(--accent)}
+.ib{flex:1;overflow:auto;min-height:0;padding:0 18px 28px}
+.sec{margin-top:16px}
+.sec>h4{margin:0 0 7px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.kv{width:100%;border-collapse:collapse;font:12px var(--mono);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:table;table-layout:fixed}
+.kv td{padding:6px 10px;border-top:1px solid var(--line);vertical-align:top;word-break:break-all}
+.kv tr:first-child td{border-top:0}
+.kv td:first-child{width:34%;color:var(--text2);background:var(--panel);font-weight:600}
+.statusbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:14px 0 4px}
+.pill{font:650 12px var(--mono);padding:4px 10px;border-radius:7px}
+.pill.ok{background:var(--ok-soft);color:#166534}.pill.warn{background:var(--warn-soft);color:#92400e}.pill.err{background:var(--err-soft);color:#991b1b}
+.statusbar .mt{font:12px var(--mono);color:var(--muted)}
+.empty{margin:34px auto;max-width:360px;text-align:center;color:var(--muted)}
+.empty .big{width:54px;height:54px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;margin:0 auto 12px;color:var(--accent)}
+.empty p{margin:6px 0 14px}
+.note{padding:8px 12px;border-radius:9px;border:1px solid #fde68a;background:var(--warn-soft);color:#92400e;margin-top:12px;display:flex;gap:10px;align-items:center}
+.note.err{border-color:#fecaca;background:var(--err-soft);color:#991b1b;font-family:var(--mono);font-size:12px;word-break:break-word}
+pre.code{margin:0;font:12px/1.55 var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow:auto;white-space:pre-wrap;word-break:break-word;max-height:60vh}
+iframe.pdf{width:100%;height:70vh;border:1px solid var(--line);border-radius:8px}
+.rl{width:100%;border-collapse:collapse}
+.rl td{padding:7px 8px;border-top:1px solid var(--line);white-space:nowrap}
+.rl tr{cursor:pointer}
+.rl tr:hover td{background:var(--soft)}
+.rl td.nm{white-space:normal;width:99%}
+.rl td.mt{font:11.5px var(--mono);color:var(--muted);text-align:right}
+
+/* ---------- JSON viewer ---------- */
+.jv{border:1px solid var(--line);border-radius:10px;background:#fff}
+.jt{position:sticky;top:0;z-index:3;display:flex;gap:8px;align-items:center;padding:7px 8px;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;flex-wrap:wrap}
+.jsearch{flex:1;min-width:170px;display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:8px;padding:0 4px 0 8px;height:28px;background:var(--soft)}
+.jsearch:focus-within{background:#fff;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.jsearch input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:12.5px}
+.jsearch .cnt{font:11px var(--mono);color:var(--muted);white-space:nowrap}
+.jsearch button{border:0;background:none;width:20px;height:22px;border-radius:5px;color:var(--muted);padding:0}
+.jsearch button:hover{background:#e7e9ef}
+.jt .seg button{padding:2px 8px;font-size:11.5px}
+.jpath{font:11px var(--mono);color:var(--muted);padding:5px 10px;border-bottom:1px solid var(--line);background:var(--panel);white-space:nowrap;overflow:auto;cursor:copy;min-height:26px}
+.jbody{font:12px/1.5 var(--mono);padding:6px 4px 8px;overflow-x:auto}
+.jr{display:flex;align-items:flex-start;gap:0;padding:1px 8px 1px calc(6px + var(--d)*16px);border-radius:5px;position:relative;cursor:default;min-height:20px;
+  background-image:repeating-linear-gradient(to right,#edeff4 0 1px,transparent 1px 16px);background-size:calc(var(--d)*16px) 100%;background-repeat:no-repeat;background-position:13px 0}
+.jr:hover{background-color:#f5f6fa}
+.jr.sel{background-color:var(--accent-soft)}
+.jr.hit{background-color:#fffbea}
+.jr.cur{background-color:#fef08a;box-shadow:inset 3px 0 0 #eab308}
+.jr.cx{cursor:pointer}
+.car{width:14px;height:18px;flex:none;position:relative}
+.car:not(.none)::before{content:"";position:absolute;left:4px;top:6px;border:4px solid transparent;border-left:5px solid #94a3b8;transition:transform .1s;transform-origin:2.5px 4px}
+.car.open::before{transform:rotate(90deg)}
+.jk{color:#0b4f8a;white-space:nowrap}
+.jk.idx{color:var(--faint)}
+.jc{color:var(--faint);margin-right:6px}
+.js{color:#0a7d43;white-space:pre-wrap;word-break:break-word}
+.jnn{color:#1d4ed8}.jb{color:#c2410c}.jnull{color:#94a3b8;font-style:italic}
+.jsum{color:var(--muted)}
+.jn{color:var(--faint);margin-left:7px;font-size:11px;white-space:nowrap}
+.jp{color:var(--faint);margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.jr a{color:inherit;text-decoration:underline;text-decoration-color:#9ad3b3}
+.jump{margin-left:8px;font:600 10.5px var(--sans);color:#86198f;background:#fdf4ff;border:1px solid #f0abfc;border-radius:20px;padding:0 7px;cursor:pointer;white-space:nowrap;flex:none}
+.jump:hover{background:#fae8ff}
+.jact{position:absolute;right:6px;top:1px;display:none;gap:4px}
+.jr:hover .jact{display:flex}
+.jact b{font:500 10.5px var(--sans);background:#fff;border:1px solid var(--line2);border-radius:5px;padding:0 6px;cursor:pointer;color:var(--text2)}
+.jact b:hover{border-color:var(--accent);color:var(--accent)}
+mark{background:#fde047;color:inherit;border-radius:2px;padding:0 1px}
+.jraw{margin:0;padding:10px 12px;font:12px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word}
+
+/* ---------- modal / toast ---------- */
+#modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;place-items:start center;z-index:50;padding-top:9vh}
+#modal.on{display:grid}
+.dlg{width:min(680px,92vw);background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.25);max-height:80vh;display:flex;flex-direction:column}
+.dlg h3{margin:0;padding:16px 20px 4px;font-size:15px}
+.dlg p{margin:0;padding:0 20px 10px;color:var(--muted)}
+.dlg .bd{padding:4px 20px;overflow:auto}
+.dlg .ft{padding:14px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--line);margin-top:10px}
+.vr{display:grid;grid-template-columns:170px 1fr auto;gap:8px;align-items:center;padding:5px 0}
+.vr .k{font:600 12px var(--mono);overflow:hidden;text-overflow:ellipsis}
+.vr .k small{display:block;font:400 10.5px var(--sans);color:var(--faint)}
+.vr input{height:32px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font:12px var(--mono);outline:none;width:100%}
+.vr input:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.vr input.bad{border-color:#fcd34d;background:var(--warn-soft)}
+#toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:#0f172a;color:#fff;padding:8px 14px;border-radius:9px;opacity:0;transition:.2s;pointer-events:none;z-index:60;max-width:80vw}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#drop{position:fixed;inset:0;background:rgba(79,70,229,.08);border:3px dashed var(--accent);display:none;place-items:center;z-index:70;font-size:18px;font-weight:600;color:var(--accent)}
+#drop.on{display:grid}
+#blank{display:none;position:absolute;inset:0;place-items:center;background:#fff;z-index:5}
+#launch{position:fixed;top:54px;left:0;right:0;bottom:0;background:var(--panel);z-index:30;overflow:auto;display:none}
+#launch.on{display:block}
+.lw{max-width:860px;margin:7vh auto 40px;padding:0 24px}
+.lw h1{margin:0 0 6px;font-size:26px;letter-spacing:-.02em}
+.lw>p{margin:0 0 26px;color:var(--muted);font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:8px;min-height:130px}
+.card:hover{border-color:var(--accent-line);box-shadow:var(--shadow);transform:translateY(-1px)}
+.card .nm{font-weight:650;font-size:15px;display:flex;align-items:center;gap:8px}
+.card .nm svg{color:var(--accent);flex:none}
+.card ul{margin:0;padding:0;list-style:none;color:var(--text2);font-size:12.5px;flex:1}
+.card li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 0}
+.card .ft{font-size:11.5px;color:var(--faint)}
+.card.warn{border-color:#fde68a}
+.lhint{margin-top:28px;padding:14px 16px;border:1px dashed var(--line2);border-radius:12px;color:var(--muted);font-size:12.5px;line-height:1.6}
+.lhint code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--text2)}
+.wsbtn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:600;color:var(--text2);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wsbtn:hover{background:var(--soft)}
+.wsbtn:empty{display:none}
+.wsbtn svg{flex:none;color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 26 26"><rect width="26" height="26" rx="7" fill="#4f46e5"/><path d="M8 13h4m2-4.5h4M14 17.5h4M12 13c1.6 0 .6-4.5 2.2-4.5M12 13c1.6 0 .6 4.5 2.2 4.5" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="7.2" cy="13" r="1.7" fill="#fff"/><circle cx="19" cy="8.5" r="1.7" fill="#fff"/><circle cx="19" cy="17.5" r="1.7" fill="#fff"/></svg>
+    <span class="t">Gobiman</span>
+    <button class="wsbtn" id="bWs" title="Switch workspace"></button>
+    <span class="c" id="colname"></span>
+  </div>
+  <div class="gsearch">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5" stroke-linecap="round"/></svg>
+    <input id="gq" placeholder="Search requests, URLs and every response…" autocomplete="off" spellcheck="false">
+    <kbd>⌘K</kbd>
+    <div id="gres"></div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="bVars">Variables</button>
+    <button class="btn" id="bMore" title="Import a collection, export or clear responses">⋯</button>
+    <button class="btn pri" id="bRun"><svg width="10" height="11" viewBox="0 0 10 11"><path d="M1 1v9l8-4.5z" fill="currentColor"/></svg>Run all</button>
+  </div>
+</div>
+
+<div class="app">
+  <aside id="side">
+    <div class="hd"><span>Collection</span><span id="sidecount"></span></div>
+    <div id="tree"></div>
+  </aside>
+  <section id="main">
+    <div id="mhead">
+      <div class="seg" id="views">
+        <button data-v="map">Mind map</button>
+        <button data-v="seq">Sequence</button>
+      </div>
+      <div id="stats"></div>
+    </div>
+    <div id="banner"><span></span><button class="btn sm" id="bBanner">Set variables</button></div>
+    <div id="stage">
+      <div id="map"></div>
+      <div id="seq"></div>
+      <div id="zoom"><button data-z="in" title="Zoom in">+</button><button data-z="out" title="Zoom out">−</button><button data-z="fit" title="Fit to screen">⤢</button></div>
+      <div id="hint">Drag to pan · pinch or ⌘-scroll to zoom · click a node to inspect</div>
+      <div id="blank"><div class="empty"><div class="big">⇪</div><b>This workspace has no collection yet</b><p>Copy a <code>.postman_collection.json</code> into its folder and Reload, or drop the file anywhere on this page.</p></div></div>
+    </div>
+  </section>
+  <div id="split"></div>
+  <aside id="insp"></aside>
+</div>
+
+<div id="launch"><div class="lw"><h1>Gobiman</h1><p>Pick a workspace. Each folder inside <code id="lroot"></code> is one workspace.</p><div class="cards" id="cards"></div>
+  <div class="lhint" id="lhint"></div></div></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<div id="drop">Drop a Postman collection or environment file</div>
+
+<script>
+'use strict';
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+const fmtBytes = (b) => (b == null ? '' : b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB');
+const fmtMs = (t) => (t == null ? '' : t < 1000 ? t + ' ms' : (t / 1000).toFixed(2) + ' s');
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const mClass = (m) => (['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(m) ? m : 'X');
+const mShort = (m) => ({ DELETE: 'DEL', PATCH: 'PAT', OPTIONS: 'OPT' }[m] || m.slice(0, 4));
+const M_COLOR = { GET: '#15803d', POST: '#2563eb', PUT: '#b45309', PATCH: '#7c3aed', DELETE: '#dc2626', X: '#475569' };
+const ST_COLOR = { idle: '#d5d9e2', ok: '#16a34a', warn: '#d97706', err: '#dc2626', run: '#4f46e5' };
+const BRANCH = [['#4f46e5', '#eef2ff'], ['#0d9488', '#effcf9'], ['#d97706', '#fffaeb'], ['#db2777', '#fdf2f8'], ['#0284c7', '#f0f9ff'], ['#7c3aed', '#f5f3ff']];
+const SECRET_RE = /token|secret|password|passwd|api[-_]?key|bearer/i;
+const SAFE = ['GET', 'HEAD', 'OPTIONS'];
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200);
+}
+async function copy(text, what = 'Copied') {
+  try { await navigator.clipboard.writeText(text); toast(what); } catch (e) { toast('Copy failed'); }
+}
+const _ctx = document.createElement('canvas').getContext('2d');
+function textW(s, font) { _ctx.font = font; return _ctx.measureText(s).width; }
+const FONT = '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+
+/* ================= state ================= */
+const S = {
+  boot: { workspaces: [], collections: [], environments: [] }, ws: null, file: null, col: null, root: null, byId: {}, reqs: [],
+  overrides: {}, results: {}, sel: null, tab: 'response', view: 'map', collapsed: new Set(), sideClosed: new Set(),
+  running: new Set(), links: [], tokens: new Map(), showLinks: true, z: { k: 1, x: 40, y: 40 }, q: '', batch: null, jsonQ: '',
+};
+const rkey = (n) => S.ws + '/' + S.file + '::' + n.id;
+const resOf = (n) => S.results[rkey(n)];
+function stOf(n) {
+  if (S.running.has(n.id)) return 'run';
+  const r = resOf(n);
+  if (!r) return 'idle';
+  if (r.error) return 'err';
+  return r.status < 300 ? 'ok' : r.status < 400 ? 'warn' : 'err';
+}
+function jsonOf(r) {
+  if (!r || r.text == null) return undefined;
+  if (!('_json' in r)) {
+    r._json = undefined;
+    const t = r.text.trim();
+    if (t && (/json/i.test(r.contentType || '') || t[0] === '{' || t[0] === '[')) { try { r._json = JSON.parse(t); } catch (e) {} }
+  }
+  return r._json;
+}
+const leaves = (n) => (n.kind === 'request' ? [n] : n.children.flatMap(leaves));
+const pathOf = (n) => { const p = []; for (let x = n.parent; x && x.kind !== 'root'; x = x.parent) p.unshift(x); return p; };
+
+/* ================= collection model ================= */
+const descOf = (d) => (d == null ? '' : typeof d === 'string' ? d : d.content || '');
+function loadCollection(file) {
+  const entry = S.boot.collections.find((c) => c.file === file);
+  if (!entry) return;
+  const data = entry.data;
+  S.file = file; S.col = data; S.byId = {}; S.reqs = []; S.collapsed = new Set(); S.sideClosed = new Set(); S.sel = null;
+  const root = { id: 'root', kind: 'root', name: (data.info && data.info.name) || file, desc: descOf(data.info && data.info.description), children: [], depth: 0, branch: 0 };
+  (function build(items, parent, prefix) {
+    (items || []).forEach((it, i) => {
+      const id = prefix + i;
+      const n = { id, name: it.name || '(unnamed)', parent, depth: parent.depth + 1, raw: it, branch: parent.kind === 'root' ? i % BRANCH.length : parent.branch };
+      if (Array.isArray(it.item)) { n.kind = 'folder'; n.desc = descOf(it.description); n.children = []; build(it.item, n, id + '-'); }
+      else {
+        n.kind = 'request';
+        n.req = typeof it.request === 'string' ? { method: 'GET', url: it.request } : it.request || {};
+        n.method = (n.req.method || 'GET').toUpperCase(); n.desc = descOf(n.req.description);
+        n.order = S.reqs.length + 1; S.reqs.push(n);
+      }
+      parent.children.push(n); S.byId[id] = n;
+    });
+  })(data.item, root, '');
+  S.root = root; S.byId.root = root;
+  const sel = $('#colname');
+  sel.innerHTML = S.boot.collections.length > 1
+    ? `<select id="colsel">${S.boot.collections.map((c) => `<option value="${esc(c.file)}"${c.file === file ? ' selected' : ''}>${esc((c.data.info && c.data.info.name) || c.file)}</option>`).join('')}</select>`
+    : esc(root.name);
+  sel.title = root.name;
+  $('#blank').style.display = 'none';
+  computeLinks(); renderAll(); requestAnimationFrame(fitMap);
+}
+
+/* variables: collection vars < environment files < values typed in the UI */
+function varDefs() {
+  const defs = new Map();
+  ((S.col && S.col.variable) || []).forEach((v) => defs.set(v.key, { key: v.key, value: v.value == null ? '' : String(v.value), src: 'collection', secret: v.type === 'secret' }));
+  S.boot.environments.forEach((e) => (e.data.values || []).forEach((v) => {
+    if (v.enabled === false) return;
+    defs.set(v.key, { key: v.key, value: v.value == null ? '' : String(v.value), src: (e.data.name || e.file), secret: v.type === 'secret' });
+  }));
+  Object.keys(S.overrides).forEach((k) => { if (!defs.has(k)) defs.set(k, { key: k, value: '', src: 'custom' }); });
+  defs.forEach((d) => { d.secret = d.secret || SECRET_RE.test(d.key); d.base = d.value; if (k_in(S.overrides, d.key)) d.value = S.overrides[d.key]; });
+  return defs;
+}
+const k_in = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const VAR_RE = /\{\{\s*([^{}]+?)\s*\}\}/g;
+function usedVars() {
+  const used = new Set();
+  if (S.col) JSON.stringify(S.col.item || []).replace(VAR_RE, (m, k) => used.add(k));
+  return used;
+}
+function resolver() {
+  const defs = varDefs(), unresolved = new Set(), empty = new Set();
+  const fn = (str) => String(str == null ? '' : str).replace(VAR_RE, (m, k) => {
+    const d = defs.get(k);
+    if (!d) { unresolved.add(k); return m; }
+    if (d.value === '') empty.add(k);
+    return d.value;
+  });
+  return { fn, unresolved, empty, defs };
+}
+function urlTpl(n) {
+  const u = n.req.url;
+  if (!u) return '';
+  if (typeof u === 'string') return u;
+  if (u.raw) return u.raw;
+  const host = Array.isArray(u.host) ? u.host.join('.') : u.host || '';
+  const q = (u.query || []).filter((x) => !x.disabled).map((x) => `${x.key}=${x.value == null ? '' : x.value}`).join('&');
+  return (u.protocol ? u.protocol + '://' : '') + host + '/' + (Array.isArray(u.path) ? u.path.join('/') : u.path || '') + (q ? '?' + q : '');
+}
+function reqInfo(n) {
+  const R = resolver(), req = n.req;
+  const headers = (req.header || []).filter((h) => h && !h.disabled && h.key).map((h) => ({ key: R.fn(h.key), value: R.fn(h.value), tpl: h.value }));
+  const has = (k) => headers.some((h) => h.key.toLowerCase() === k);
+  const auth = req.auth || (S.col && S.col.auth);
+  if (auth && !has('authorization')) {
+    const get = (arr, k) => { const x = (arr || []).find((a) => a.key === k); return x ? R.fn(x.value) : ''; };
+    if (auth.type === 'bearer') headers.push({ key: 'Authorization', value: 'Bearer ' + get(auth.bearer, 'token'), tpl: 'Bearer (collection auth)' });
+    if (auth.type === 'basic') headers.push({ key: 'Authorization', value: 'Basic ' + btoa(get(auth.basic, 'username') + ':' + get(auth.basic, 'password')), tpl: 'Basic (collection auth)' });
+  }
+  let body = null, bodyNote = '';
+  const b = req.body;
+  if (b && b.mode === 'raw' && b.raw != null) body = R.fn(b.raw);
+  else if (b && b.mode === 'urlencoded') {
+    body = (b.urlencoded || []).filter((x) => !x.disabled).map((x) => encodeURIComponent(R.fn(x.key)) + '=' + encodeURIComponent(R.fn(x.value))).join('&');
+    if (!has('content-type')) headers.push({ key: 'Content-Type', value: 'application/x-www-form-urlencoded' });
+  } else if (b && b.mode === 'graphql' && b.graphql) {
+    let v = {}; try { v = JSON.parse(R.fn(b.graphql.variables || '{}')); } catch (e) {}
+    body = JSON.stringify({ query: R.fn(b.graphql.query), variables: v });
+    if (!has('content-type')) headers.push({ key: 'Content-Type', value: 'application/json' });
+  } else if (b && b.mode) bodyNote = `Body mode "${b.mode}" is shown but not sent by this tool.`;
+  const tpl = urlTpl(n);
+  const query = typeof req.url === 'object' && req.url && Array.isArray(req.url.query) ? req.url.query.filter((x) => !x.disabled).map((x) => ({ key: x.key, value: R.fn(x.value) })) : [];
+  return { method: n.method, tpl, url: R.fn(tpl), headers, body, bodyNote, query, unresolved: [...R.unresolved], empty: [...R.empty] };
+}
+function hostOf(n) {
+  const u = reqInfo(n).url;
+  try { return new URL(u).host; } catch (e) { return u.split('/')[0] || 'server'; }
+}
+const pathLabel = (n) => urlTpl(n).replace(/^\{\{[^}]+\}\}/, '').replace(/^https?:\/\/[^/]+/, '') || '/';
+
+/* Data links: an ID that is hard-coded in a request URL and first shows up in an earlier response. */
+function computeLinks() {
+  S.tokens = new Map(); S.links = [];
+  S.reqs.forEach((n) => {
+    n._src = null; n._feeds = [];
+    n._toks = urlTpl(n).replace(VAR_RE, '/').replace(/^https?:\/\/[^/]+/, '').split(/[\/?&=#]+/).filter((t) => t.length >= 8 && /\d/.test(t));
+    n._toks.forEach((t) => { if (!S.tokens.has(t)) S.tokens.set(t, []); S.tokens.get(t).push(n); });
+  });
+  S.tokens.forEach((users, tok) => {
+    const src = S.reqs.find((r) => { const res = resOf(r); return res && res.text && !r._toks.includes(tok) && res.text.includes(tok); });
+    if (!src) return;
+    const targets = users.filter((u) => u.order > src.order);
+    if (!targets.length) return;
+    targets.forEach((t) => { t._src = { node: src, token: tok }; });
+    // collapse to the folder when every request in it uses this ID
+    let anc = targets[0].parent;
+    while (anc && anc.kind !== 'root' && !targets.every((t) => { for (let x = t.parent; x; x = x.parent) if (x === anc) return true; return false; })) anc = anc.parent;
+    const whole = anc && anc.kind === 'folder' && leaves(anc).every((l) => targets.includes(l));
+    const ends = whole ? [anc] : targets;
+    ends.forEach((to) => { S.links.push({ from: src, to, token: tok }); src._feeds.push({ node: to, token: tok }); });
+  });
+}
+function jumpTarget(str, self) {
+  const users = S.tokens.get(str);
+  if (!users || (self && self._toks.includes(str))) return null;
+  const others = users.filter((u) => u !== self);
+  if (!others.length) return null;
+  const l = S.links.find((x) => x.token === str);
+  return l && l.to !== self ? l.to : others[0];
+}
+
+/* ================= JSON viewer ================= */
+function JsonView(host, data, o = {}) {
+  const st = { exp: new Set(), q: o.q || '', matches: [], cur: 0, raw: false, sel: '' };
+  const isC = (v) => v !== null && typeof v === 'object';
+  const child = (p, k, arr) => (arr ? `${p}[${k}]` : /^[A-Za-z_$][\w$]*$/.test(k) ? `${p}.${k}` : `${p}[${JSON.stringify(k)}]`);
+  let vals = new Map();
+
+  function expandTo(depth) {
+    st.exp.clear(); let count = 0;
+    (function w(v, p, d) {
+      if (!isC(v) || d >= depth || count > 60000) return;
+      st.exp.add(p); count++;
+      const a = Array.isArray(v);
+      for (const k in v) w(v[k], child(p, k, a), d + 1);
+    })(data, '$', 0);
+  }
+  function search() {
+    st.matches = []; st.cur = 0;
+    const q = st.q.toLowerCase();
+    if (!q) return;
+    (function w(v, p, k, anc) {
+      const km = k != null && String(k).toLowerCase().includes(q);
+      if (isC(v)) {
+        if (km) st.matches.push({ p, anc });
+        const a = Array.isArray(v), anc2 = anc.concat(p);
+        for (const kk in v) w(v[kk], child(p, kk, a), a ? null : kk, anc2);
+      } else if (km || String(v).toLowerCase().includes(q)) st.matches.push({ p, anc });
+    })(data, '$', null, []);
+    (st.matches.length <= 400 ? st.matches : st.matches.slice(0, 1)).forEach((m) => m.anc.forEach((a) => st.exp.add(a)));
+  }
+  function hl(s) {
+    s = String(s);
+    if (!st.q) return esc(s);
+    const lc = s.toLowerCase(), q = st.q.toLowerCase();
+    let i = 0, out = '', j;
+    while ((j = lc.indexOf(q, i)) > -1) { out += esc(s.slice(i, j)) + '<mark>' + esc(s.slice(j, j + q.length)) + '</mark>'; i = j + q.length; }
+    return out + esc(s.slice(i));
+  }
+  function preview(v) {
+    const parts = [];
+    let len = 0;
+    const a = Array.isArray(v);
+    for (const k in v) {
+      const x = v[k];
+      let s = isC(x) ? (Array.isArray(x) ? `[${x.length}]` : '{…}') : typeof x === 'string' ? JSON.stringify(trunc(x, 28)) : String(x);
+      s = a ? s : k + ': ' + s;
+      if ((len += s.length + 2) > 90) { parts.push('…'); break; }
+      parts.push(s);
+    }
+    return parts.join(', ');
+  }
+  function val(v) {
+    if (v === null) return '<span class="jnull">null</span>';
+    if (typeof v === 'string') {
+      const long = v.length > 6000;
+      const shown = hl(long ? v.slice(0, 6000) : v) + (long ? `<span class="jn">… +${v.length - 6000} chars (use copy)</span>` : '');
+      const inner = /^https?:\/\/\S+$/.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">${shown}</a>` : shown;
+      const t = o.jump && v.length >= 8 && v.length < 200 ? o.jump(v) : null;
+      return `<span class="js">"${inner}"</span>` + (t ? `<span class="jump" data-go="${esc(t.id)}" title="This ID is used by: ${esc(t.name)}">→ ${esc(trunc(t.name, 30))}</span>` : '');
+    }
+    if (typeof v === 'number') return `<span class="jnn">${hl(v)}</span>`;
+    if (typeof v === 'boolean') return `<span class="jb">${hl(v)}</span>`;
+    return esc(String(v));
+  }
+  function render() {
+    const body = $('.jbody', host);
+    if (st.raw) {
+      let txt; try { txt = JSON.stringify(data, null, 2); } catch (e) { txt = String(data); }
+      const cut = txt.length > 1500000;
+      body.innerHTML = `<pre class="jraw">${hl(cut ? txt.slice(0, 1500000) : txt)}${cut ? '\n… truncated for display' : ''}</pre>`;
+    } else {
+      vals = new Map();
+      const hits = new Set(st.matches.map((m) => m.p));
+      const curP = st.matches[st.cur] && st.matches[st.cur].p;
+      const out = [];
+      (function row(k, v, p, d, arr) {
+        vals.set(p, v);
+        const c = isC(v), open = c && st.exp.has(p);
+        let h = `<div class="jr${c ? ' cx' : ''}${hits.has(p) ? ' hit' : ''}${curP === p ? ' cur' : ''}${st.sel === p ? ' sel' : ''}" data-p="${esc(p)}" style="--d:${d}"><i class="car${c ? (open ? ' open' : '') : ' none'}"></i>`;
+        if (k !== null) h += `<span class="jk${arr ? ' idx' : ''}">${arr ? k : hl(k)}</span><span class="jc">:</span>`;
+        if (c) {
+          const a = Array.isArray(v), n = a ? v.length : Object.keys(v).length;
+          h += `<span class="jsum">${a ? '[' : '{'}${open || !n ? '' : '…'}${open && n ? '' : a ? ']' : '}'}</span><span class="jn">${n} ${a ? (n === 1 ? 'item' : 'items') : n === 1 ? 'key' : 'keys'}</span>`;
+          if (!open && n) h += `<span class="jp">${esc(preview(v))}</span>`;
+        } else h += val(v);
+        out.push(h + '<span class="jact"><b data-a="copy">copy</b><b data-a="path">path</b></span></div>');
+        if (open) { const a = Array.isArray(v); for (const kk in v) row(kk, v[kk], child(p, kk, a), d + 1, a); }
+      })(null, data, '$', 0, false);
+      body.innerHTML = out.join('');
+    }
+    const cnt = $('.cnt', host);
+    cnt.textContent = st.q ? (st.matches.length ? `${st.cur + 1}/${st.matches.length}` : '0 results') : '';
+    $('.jpath', host).textContent = st.sel || '$  — click a row to see its path, ⌥-click to expand a whole branch';
+    $$('.jt [data-l]', host).forEach((b) => b.classList.remove('on'));
+    $('.jt [data-raw]', host).classList.toggle('on', st.raw);
+  }
+  function go(delta) {
+    if (!st.matches.length) return;
+    st.cur = (st.cur + delta + st.matches.length) % st.matches.length;
+    st.matches[st.cur].anc.forEach((a) => st.exp.add(a));
+    render(); focusCur();
+  }
+  function focusCur() { const el = $('.jr.cur', host); if (el) el.scrollIntoView({ block: 'center' }); }
+
+  host.innerHTML = `<div class="jv"><div class="jt">
+    <div class="jsearch"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#9aa1ae" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5" stroke-linecap="round"/></svg>
+      <input placeholder="Search keys and values…" spellcheck="false" value="${esc(st.q)}"><span class="cnt"></span>
+      <button data-nav="-1" title="Previous (Shift+Enter)">↑</button><button data-nav="1" title="Next (Enter)">↓</button></div>
+    <div class="seg" title="Expand to depth"><button data-l="1">1</button><button data-l="2">2</button><button data-l="3">3</button><button data-l="99">All</button></div>
+    <div class="seg"><button data-raw="1">Raw</button></div>
+    <button class="btn sm" data-copyall="1">Copy</button></div>
+    <div class="jpath" title="Click to copy the path"></div><div class="jbody"></div></div>`;
+  const input = $('.jsearch input', host);
+  input.addEventListener('input', debounce(() => { st.q = input.value.trim(); if (o.onQuery) o.onQuery(st.q); search(); render(); focusCur(); }, 140));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? -1 : 1); } });
+  host.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.dataset.nav) return go(+t.dataset.nav);
+    if (t.dataset.l) { expandTo(+t.dataset.l); st.raw = false; render(); t.classList.add('on'); return; }
+    if (t.dataset.raw) { st.raw = !st.raw; return render(); }
+    if (t.dataset.copyall) return copy(JSON.stringify(data, null, 2), 'JSON copied');
+    if (t.classList.contains('jpath')) return st.sel && copy(st.sel, 'Path copied');
+    if (t.dataset.go) return o.onJump && o.onJump(t.dataset.go);
+    const rowEl = t.closest('.jr');
+    if (!rowEl || t.closest('a')) return;
+    const p = rowEl.dataset.p, v = vals.get(p);
+    if (t.dataset.a === 'copy') return copy(typeof v === 'string' ? v : JSON.stringify(v, null, 2), 'Value copied');
+    if (t.dataset.a === 'path') return copy(p, 'Path copied');
+    if (window.getSelection().toString()) return;
+    st.sel = p;
+    if (isC(v)) {
+      if (e.altKey) {
+        const open = !st.exp.has(p);
+        (function w(x, pp) { if (!isC(x)) return; open ? st.exp.add(pp) : st.exp.delete(pp); const a = Array.isArray(x); for (const k in x) w(x[k], child(pp, k, a)); })(v, p);
+      } else st.exp.has(p) ? st.exp.delete(p) : st.exp.add(p);
+    }
+    render();
+  });
+  expandTo(o.depth || 2); search(); render();
+  if (st.q) requestAnimationFrame(focusCur);
+}
+
+/* ================= sidebar ================= */
+function matchesQ(n, q) {
+  if (n.name.toLowerCase().includes(q)) return true;
+  if (n.kind === 'request') return urlTpl(n).toLowerCase().includes(q) || n.method.toLowerCase() === q || n.desc.toLowerCase().includes(q) || bodyHits(n, q) > 0;
+  return false;
+}
+function bodyHits(n, q) {
+  const r = resOf(n);
+  if (!r || !r.text) return 0;
+  if (!r._lcw) r._lcw = { _lc: r.text.toLowerCase() };
+  return countHits(r._lcw, q);
+}
+function renderSide() {
+  const q = S.q.toLowerCase(), out = [];
+  const vis = (n) => !q || matchesQ(n, q) || (n.children && n.children.some(vis));
+  (function walk(n, d) {
+    if (!vis(n)) return;
+    if (n.kind === 'request') {
+      out.push(`<div class="tn${S.sel === n.id ? ' sel' : ''}" data-id="${n.id}" style="--d:${d}" title="${esc(n.name)}"><span class="tw"></span><span class="m ${mClass(n.method)}">${mShort(n.method)}</span><span class="nm">${esc(n.name)}</span><span class="sd ${stOf(n)}"></span></div>`);
+    } else {
+      const open = q || !S.sideClosed.has(n.id);
+      out.push(`<div class="tn folder${S.sel === n.id ? ' sel' : ''}" data-id="${n.id}" style="--d:${d}" title="${esc(n.name)}"><span class="tw${open ? ' open' : ''}" data-tw="1"><svg width="8" height="10" viewBox="0 0 8 10"><path d="M1.5 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nm">${esc(n.name)}</span><span class="ct">${leaves(n).length}</span></div>`);
+      if (open) n.children.forEach((c) => walk(c, d + 1));
+    }
+  })(S.root, 0);
+  $('#tree').innerHTML = out.join('') || '<div class="gempty">Nothing matches</div>';
+  $('#sidecount').textContent = S.reqs.length + ' requests';
+}
+
+/* ================= mind map ================= */
+const ROW = 38, NH = 30, GAP = 84;
+function nodeLabel(n) { return trunc(n.name, n.kind === 'root' ? 40 : n.kind === 'folder' ? 50 : 36); }
+function nodeW(n) {
+  const font = (n.kind === 'request' ? '500 12.5px ' : '600 12.5px ') + FONT;
+  return Math.ceil(textW(nodeLabel(n), font)) + (n.kind === 'request' ? 72 : n.kind === 'folder' ? 50 : 30);
+}
+function layoutMap() {
+  const colW = []; let y = 0; const vis = [];
+  (function walk(n) {
+    n._w = nodeW(n); colW[n.depth] = Math.max(colW[n.depth] || 0, n._w); vis.push(n);
+    const kids = n.children && !S.collapsed.has(n.id) ? n.children : [];
+    if (!kids.length) { n._y = y; y += ROW; }
+    else { kids.forEach(walk); n._y = (kids[0]._y + kids[kids.length - 1]._y) / 2; }
+  })(S.root);
+  const colX = [0];
+  for (let i = 1; i < colW.length; i++) colX[i] = colX[i - 1] + colW[i - 1] + GAP;
+  vis.forEach((n) => { n._x = colX[n.depth]; });
+  return { vis, W: colX[colX.length - 1] + colW[colW.length - 1] + 190, H: y };
+}
+function renderMap() {
+  const { vis, W, H } = layoutMap();
+  S.mapBox = { W, H };
+  const visSet = new Set(vis);
+  const p = [`<svg xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1.5 9 5 1 8.5z" fill="#c026d3"/></marker></defs><g id="mg">`];
+  vis.forEach((n) => {
+    if (!n.children || S.collapsed.has(n.id)) return;
+    n.children.forEach((c) => {
+      const x1 = n._x + n._w, y1 = n._y + NH / 2, x2 = c._x, y2 = c._y + NH / 2, mx = (x1 + x2) / 2;
+      p.push(`<path class="tl" stroke="${BRANCH[c.branch][0]}55" d="M${x1} ${y1}C${mx} ${y1},${mx} ${y2},${x2} ${y2}"/>`);
+    });
+  });
+  if (S.showLinks) {
+    const seen = new Set();
+    S.links.forEach((l) => {
+      const up = (n) => { while (!visSet.has(n)) n = n.parent; return n; };
+      const a = up(l.from), b = up(l.to);
+      if (a === b || seen.has(a.id + '>' + b.id)) return;
+      seen.add(a.id + '>' + b.id);
+      const x1 = a._x, y1 = a._y + NH - 7, x2 = b._x - 2, y2 = b._y + 7, bulge = Math.min(16 + Math.abs(y2 - y1) * 0.06, 40);
+      p.push(`<path class="dl" marker-end="url(#ah)" d="M${x1} ${y1}C${x1 - bulge} ${y1},${x2 - bulge} ${y2},${x2} ${y2}"><title>${esc(l.from.name)} → ${esc(l.to.name)}\nID ${esc(l.token)} comes from this response</title></path>`);
+    });
+  }
+  vis.forEach((n) => {
+    const [bc, bf] = BRANCH[n.branch], sel = S.sel === n.id ? ' sel' : '';
+    p.push(`<g class="mn${sel}" data-id="${n.id}" transform="translate(${n._x},${n._y})"><title>${esc(n.name)}${n.desc ? '\n\n' + esc(trunc(n.desc, 300)) : ''}</title>`);
+    if (n.kind === 'root') {
+      p.push(`<rect class="b" width="${n._w}" height="${NH}" rx="9" fill="#0f172a" stroke="#0f172a"/><text x="15" y="19.5" font-size="12.5" font-weight="600" fill="#fff">${esc(nodeLabel(n))}</text>`);
+    } else if (n.kind === 'folder') {
+      const cnt = leaves(n).length, closed = S.collapsed.has(n.id);
+      p.push(`<rect class="b" width="${n._w}" height="${NH}" rx="8" fill="${bf}" stroke="${bc}" stroke-opacity=".55"/><text x="12" y="19.5" font-size="12.5" font-weight="600" fill="#1e293b">${esc(nodeLabel(n))}</text>`);
+      p.push(`<text x="${n._w - 27}" y="19" font-size="10.5" fill="${bc}" text-anchor="end" font-weight="600">${cnt}</text>`);
+      p.push(`<g class="tg" data-tg="1" transform="translate(${n._w - 13},${NH / 2})"><circle r="8"/><path d="M-3.5 0h7${closed ? 'M0-3.5v7' : ''}" stroke="${bc}" stroke-width="1.6" stroke-linecap="round"/></g>`);
+    } else {
+      const st = stOf(n), r = resOf(n), mc = M_COLOR[mClass(n.method)];
+      p.push(`<rect class="b" width="${n._w}" height="${NH}" rx="8" fill="#fff" stroke="#d5d9e3"/><rect x="0" y="7" width="3" height="${NH - 14}" rx="1.5" fill="${bc}"/>`);
+      p.push(`<text x="12" y="19" font-size="9.5" font-weight="700" fill="${mc}" font-family="ui-monospace,Menlo,monospace">${mShort(n.method)}</text><text x="44" y="19.5" font-size="12.5" font-weight="500" fill="#0f172a">${esc(nodeLabel(n))}</text>`);
+      p.push(`<circle cx="${n._w - 14}" cy="${NH / 2}" r="4" fill="${ST_COLOR[st]}">${st === 'run' ? '<animate attributeName="opacity" values="1;.2;1" dur="1s" repeatCount="indefinite"/>' : ''}</circle>`);
+      if (r) p.push(`<text class="meta" x="${n._w + 9}" y="19" ${r.error || r.status >= 400 ? 'style="fill:#dc2626"' : ''}>${r.error ? 'failed' : `${r.status} · ${fmtMs(r.timeMs)} · ${fmtBytes(r.size)}`}</text>`);
+    }
+    p.push('</g>');
+  });
+  p.push('</g></svg>');
+  $('#map').innerHTML = p.join('');
+  applyZ();
+}
+function applyZ() { const g = $('#mg'); if (g) g.setAttribute('transform', `translate(${S.z.x},${S.z.y}) scale(${S.z.k})`); }
+function fitMap() {
+  const el = $('#map'), b = S.mapBox;
+  if (!b || !el.clientWidth) return;
+  const k = Math.max(0.45, Math.min(1.15, (el.clientWidth - 60) / b.W, (el.clientHeight - 60) / b.H));
+  S.z = { k, x: Math.max(30, (el.clientWidth - b.W * k) / 2 + 40 * k), y: Math.max(24, (el.clientHeight - b.H * k) / 2) };
+  applyZ();
+}
+function zoomBy(f, cx, cy) {
+  const el = $('#map'); cx = cx == null ? el.clientWidth / 2 : cx; cy = cy == null ? el.clientHeight / 2 : cy;
+  const k = Math.max(0.25, Math.min(2.5, S.z.k * f)), r = k / S.z.k;
+  S.z = { k, x: cx - (cx - S.z.x) * r, y: cy - (cy - S.z.y) * r }; applyZ();
+}
+function revealInMap(n) {
+  const el = $('#map');
+  if (n._x == null || !el.clientWidth) return;
+  const sx = S.z.x + n._x * S.z.k, sy = S.z.y + n._y * S.z.k, w = n._w * S.z.k;
+  if (sx < 10 || sx + w > el.clientWidth - 10) S.z.x += el.clientWidth / 2 - (sx + w / 2);
+  if (sy < 10 || sy > el.clientHeight - 50) S.z.y += el.clientHeight / 2 - sy;
+  applyZ();
+}
+
+/* ================= sequence diagram ================= */
+function renderSeq() {
+  const hosts = [...new Set(S.reqs.map(hostOf))];
+  const GUT = 318, CX = GUT + 40, LANE = Math.max(330, Math.min(460, ($('#stage').clientWidth || 900) - CX - 150));
+  const hx = (h) => CX + LANE * (hosts.indexOf(h) + 1);
+  const W = CX + LANE * hosts.length + 110;
+  const rows = [], frames = [];
+  let y = 66;
+  (function walk(n) {
+    if (n.kind === 'request') { rows.push({ n, y }); y += 56; return; }
+    if (n.kind === 'root') return n.children.forEach(walk);
+    const f = { n, y0: y, d: n.depth - 1 }; y += 30;
+    n.children.forEach(walk);
+    y += 4; f.y1 = y; frames.push(f); y += 12;
+  })(S.root);
+  const H = y + 20;
+  const p = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>
+    <marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 9 5 1 9z" fill="#334155"/></marker>
+    <marker id="sb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="#94a3b8" stroke-width="1.5"/></marker></defs>`];
+  frames.sort((a, b) => a.d - b.d).forEach((f) => {
+    const [bc, bf] = BRANCH[f.n.branch], x = 6 + f.d * 10;
+    p.push(`<g class="sr${S.sel === f.n.id ? ' sel' : ''}" data-id="${f.n.id}"><rect x="${x}" y="${f.y0}" width="${W - 2 * x}" height="${f.y1 - f.y0}" rx="10" fill="${f.d ? '#ffffff' : bf}" fill-opacity="${f.d ? 0.75 : 0.55}" stroke="${bc}" stroke-opacity=".4"/>
+      <text x="${x + 12}" y="${f.y0 + 19}" font-size="11.5" font-weight="650" fill="${bc}">${esc(trunc(f.n.name, 96))}</text></g>`);
+  });
+  const lifeY = 50;
+  [['Client', CX, 'this tool / your backend']].concat(hosts.map((h) => [h, hx(h), 'API'])).forEach(([label, x, sub]) => {
+    const w = Math.max(120, textW(label, '600 12.5px ' + FONT) + 34);
+    p.push(`<line x1="${x}" y1="${lifeY}" x2="${x}" y2="${H - 8}" stroke="#cbd5e1" stroke-dasharray="3 5"/>
+      <rect x="${x - w / 2}" y="8" width="${w}" height="40" rx="10" fill="#0f172a"/><text x="${x}" y="26" text-anchor="middle" font-size="12.5" font-weight="600" fill="#fff">${esc(label)}</text><text x="${x}" y="40" text-anchor="middle" font-size="10" fill="#94a3b8">${sub}</text>`);
+  });
+  rows.forEach(({ n, y }) => {
+    const r = resOf(n), st = stOf(n), x2 = hx(hostOf(n)), mc = M_COLOR[mClass(n.method)], d = n.depth - 1, nx = 18 + d * 10;
+    const sub = n._src ? `↳ uses ID from #${n._src.node.order} ${trunc(n._src.node.name, 26)}` : trunc(n.desc.replace(/\s+/g, ' '), 46);
+    const resp = S.running.has(n.id) ? 'running…' : !r ? 'not run yet' : r.error ? trunc(r.error, 52) : `${r.status} ${r.statusText || ''} · ${fmtMs(r.timeMs)} · ${fmtBytes(r.size)}`;
+    p.push(`<g class="sr${S.sel === n.id ? ' sel' : ''}" data-id="${n.id}"><title>${esc(n.name)}\n${esc(n.method + ' ' + urlTpl(n))}</title>
+      <rect class="bg" x="${nx - 6}" y="${y - 2}" width="${W - 2 * (nx - 6)}" height="52" rx="8"/>
+      <circle cx="${nx + 12}" cy="${y + 17}" r="11" fill="#fff" stroke="${ST_COLOR[st]}" stroke-width="2"/><text x="${nx + 12}" y="${y + 21}" text-anchor="middle" font-size="10.5" font-weight="650" fill="#334155">${n.order}</text>
+      <text x="${nx + 32}" y="${y + 17}" font-size="12.5" font-weight="600" fill="#0f172a">${esc(trunc(n.name, 38 - d * 2))}</text>
+      <text x="${nx + 32}" y="${y + 33}" font-size="11" fill="${n._src ? '#a21caf' : '#8b93a1'}">${esc(sub)}</text>
+      <line x1="${CX}" y1="${y + 17}" x2="${x2 - 2}" y2="${y + 17}" stroke="#334155" stroke-width="1.5" marker-end="url(#sa)"/>
+      <text x="${CX + 12}" y="${y + 11}" font-size="11" font-family="ui-monospace,Menlo,monospace"><tspan font-weight="700" fill="${mc}">${n.method}</tspan><tspan fill="#334155"> ${esc(trunc(pathLabel(n), Math.floor((x2 - CX) / 7.1) - 6))}</tspan></text>
+      <line x1="${x2}" y1="${y + 39}" x2="${CX + 2}" y2="${y + 39}" stroke="${st === 'idle' ? '#cbd5e1' : ST_COLOR[st]}" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sb)"/>
+      <text x="${x2 - 12}" y="${y + 34}" text-anchor="end" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="${st === 'idle' ? '#9aa1ae' : ST_COLOR[st]}" font-weight="${st === 'idle' ? 400 : 600}">${esc(resp)}</text></g>`);
+  });
+  p.push('</svg>');
+  $('#seq').innerHTML = p.join('');
+}
+
+/* ================= stats / banner ================= */
+function renderStats() {
+  const rs = S.reqs.map(resOf).filter(Boolean);
+  const ok = rs.filter((r) => !r.error && r.status < 400).length, bad = rs.length - ok;
+  const time = rs.reduce((a, r) => a + (r.timeMs || 0), 0), size = rs.reduce((a, r) => a + (r.size || 0), 0);
+  const hosts = new Set(S.reqs.map(hostOf));
+  let h = `<span class="chip"><b>${S.reqs.length}</b> requests</span><span class="chip"><b>${hosts.size}</b> host${hosts.size === 1 ? '' : 's'}</span>`;
+  if (rs.length) h += `<span class="chip ok"><b>${ok}</b> ok</span>${bad ? `<span class="chip err"><b>${bad}</b> failed</span>` : ''}<span class="chip"><b>${fmtMs(time)}</b> total</span><span class="chip"><b>${fmtBytes(size)}</b></span>`;
+  else h += '<span class="chip">not run yet</span>';
+  if (S.links.length) h += `<span class="chip link${S.showLinks ? '' : ' off'}" id="tLinks" title="An ID in a request URL that first appears in an earlier response. Click to show/hide."><i></i><b>${S.links.length}</b> data links</span>`;
+  $('#stats').innerHTML = h;
+
+  const R = resolver(), used = usedVars(), missing = [...used].filter((k) => !R.defs.has(k) || R.defs.get(k).value === '');
+  $('#banner').classList.toggle('on', missing.length > 0);
+  $('#banner span').innerHTML = missing.length ? `<b>${missing.map((k) => esc(k)).join(', ')}</b> ${missing.length === 1 ? 'has' : 'have'} no value yet — requests that use ${missing.length === 1 ? 'it' : 'them'} will be rejected until you set ${missing.length === 1 ? 'it' : 'them'}.` : '';
+  $('#bVars').innerHTML = 'Variables' + (missing.length ? '<span class="dot"></span>' : '');
+  const running = !!S.batch;
+  $('#bRun').className = 'btn ' + (running ? 'stop' : 'pri');
+  $('#bRun').innerHTML = running ? `Stop (${S.batch.done}/${S.batch.total})` : '<svg width="10" height="11" viewBox="0 0 10 11"><path d="M1 1v9l8-4.5z" fill="currentColor"/></svg>Run all';
+}
+
+/* ================= inspector ================= */
+function urlHtml(tpl) {
+  const defs = varDefs();
+  let out = '', i = 0;
+  tpl.replace(VAR_RE, (m, k, idx) => {
+    out += esc(tpl.slice(i, idx)); i = idx + m.length;
+    const d = defs.get(k);
+    out += !d ? `<span class="var miss" title="Not defined">${esc(m)}</span>` : d.value === '' ? `<span class="var miss" title="Empty">${esc(m)}</span>` : `<span class="var" title="${esc(m)}">${esc(d.secret ? mask(d.value) : d.value)}</span>`;
+  });
+  return out + esc(tpl.slice(i));
+}
+const mask = (v) => (v.length <= 8 ? '••••••' : '••••••••' + v.slice(-4));
+function maskHeader(h) {
+  if (/^(authorization|cookie|x-api-key|proxy-authorization)$/i.test(h.key)) {
+    const m = h.value.match(/^(\w+\s+)?(.*)$/);
+    return (m[1] || '') + (m[2] ? mask(m[2]) : '(empty)');
+  }
+  return h.value;
+}
+function descHtml(d) { return esc(d).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>'); }
+function curlOf(info) {
+  const q = (s) => "'" + String(s).replace(/'/g, "'\\''") + "'";
+  return ['curl -X ' + info.method + ' ' + q(info.url)].concat(info.headers.map((h) => '  -H ' + q(h.key + ': ' + h.value)), info.body ? ['  --data-raw ' + q(info.body)] : []).join(' \\\n');
+}
+function renderInspector() {
+  const n = S.sel && S.byId[S.sel], el = $('#insp');
+  document.body.classList.toggle('has-insp', !!n);
+  if (!n) { el.innerHTML = ''; return; }
+  const crumb = pathOf(n).map((x) => esc(trunc(x.name, 44))).join('  ›  ');
+  const closeBtn = '<button class="btn sm ghost" data-act="close" title="Close (Esc)">✕</button>';
+  if (n.kind !== 'request') {
+    const ls = leaves(n);
+    el.innerHTML = `<div class="ih"><div class="crumb">${n.kind === 'root' ? 'Collection' : crumb || 'Folder'}</div>
+      <h2><span class="nm">${esc(n.name)}</span><span class="x"><button class="btn sm pri" data-act="runFolder">▶ Run ${ls.length}</button>${closeBtn}</span></h2>
+      ${n.desc ? `<div class="desc" style="max-height:30vh">${descHtml(n.desc)}</div>` : ''}</div>
+      <div class="ib"><div class="sec"><h4>Requests in call order</h4><table class="rl">${ls.map((l) => {
+        const r = resOf(l);
+        return `<tr data-id="${l.id}"><td><span class="sd ${stOf(l)}" style="display:inline-block"></span></td><td><span class="m ${mClass(l.method)}">${mShort(l.method)}</span></td><td class="nm">${esc(l.name)}<div style="color:var(--faint);font-size:11px">${esc(pathOf(l).filter((x) => x !== n && pathOf(x).includes(n) || x.parent === n).map((x) => trunc(x.name, 50)).join(' › '))}</div></td><td class="mt">${r ? (r.error ? 'failed' : r.status + ' · ' + fmtMs(r.timeMs)) : ''}</td></tr>`;
+      }).join('')}</table></div></div>`;
+    return;
+  }
+  const info = reqInfo(n), r = resOf(n), st = stOf(n);
+  const conn = [];
+  if (n._src) conn.push(`Uses an ID from <span class="chip link" data-go="${n._src.node.id}">#${n._src.node.order} ${esc(trunc(n._src.node.name, 34))}</span>`);
+  if (n._feeds.length) conn.push('Its response feeds ' + n._feeds.slice(0, 8).map((f) => `<span class="chip link" data-go="${f.node.id}" title="${esc(f.token)}">${esc(trunc(f.node.name, 22))}</span>`).join('') + (n._feeds.length > 8 ? ` +${n._feeds.length - 8} more` : ''));
+  el.innerHTML = `<div class="ih"><div class="crumb">${crumb ? crumb + '  ›  ' : ''}step ${n.order} of ${S.reqs.length}</div>
+    <h2><span class="mb ${mClass(n.method)}">${n.method}</span><span class="nm">${esc(n.name)}</span>
+      <span class="x"><button class="btn sm" data-act="curl" title="Copy as cURL">cURL</button><button class="btn sm pri" data-act="run">${st === 'run' ? 'Running…' : '▶ Run'}</button>${closeBtn}</span></h2>
+    <div class="url">${urlHtml(info.tpl)}</div>
+    ${n.desc ? `<div class="desc">${descHtml(n.desc)}</div>` : ''}
+    ${conn.length ? `<div class="conn">${conn.join('<span style="width:6px"></span>')}</div>` : ''}</div>
+    <div class="tabs">${[['response', 'Response'], ['request', 'Request'], ['source', 'Postman JSON']].map(([k, l]) => `<button data-tab="${k}" class="${S.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="ib" id="ib"></div>`;
+  const ib = $('#ib');
+  const jvOpts = (extra) => Object.assign({ jump: (s) => jumpTarget(s, n), onJump: (id) => select(id) }, extra);
+
+  if (S.tab === 'source') {
+    ib.innerHTML = '<div class="sec"><h4>Item exactly as stored in the collection file</h4><div id="jv"></div></div>';
+    JsonView($('#jv'), n.raw, { depth: 3 });
+  } else if (S.tab === 'request') {
+    const warn = info.unresolved.length || info.empty.length
+      ? `<div class="note"><span>${[...info.unresolved, ...info.empty].map((k) => `<b>${esc(k)}</b>`).join(', ')} ${info.unresolved.length + info.empty.length === 1 ? 'is' : 'are'} not set.</span><button class="btn sm" data-act="vars">Set variables</button></div>` : '';
+    let h = warn + `<div class="sec"><h4>Resolved URL</h4><pre class="code">${esc(info.method)} ${esc(info.url)}</pre></div>`;
+    if (info.query.length) h += `<div class="sec"><h4>Query parameters</h4><table class="kv">${info.query.map((q) => `<tr><td>${esc(q.key)}</td><td>${esc(q.value)}</td></tr>`).join('')}</table></div>`;
+    h += `<div class="sec"><h4>Headers</h4>${info.headers.length ? `<table class="kv">${info.headers.map((x) => `<tr><td>${esc(x.key)}</td><td>${esc(maskHeader(x))}</td></tr>`).join('')}</table>` : '<span style="color:var(--muted)">None</span>'}</div>`;
+    if (info.body != null) h += '<div class="sec"><h4>Body</h4><div id="jvb"></div></div>';
+    if (info.bodyNote) h += `<div class="note">${esc(info.bodyNote)}</div>`;
+    const scripts = (n.raw.event || []).map((ev) => ({ ev: ev.listen, code: ((ev.script && ev.script.exec) || []).join('\n') })).filter((x) => x.code.trim());
+    scripts.forEach((x) => { h += `<div class="sec"><h4>${x.ev === 'test' ? 'Post-response script (shown only, not executed here)' : esc(x.ev) + ' script (shown only)'}</h4><pre class="code">${esc(x.code)}</pre></div>`; });
+    ib.innerHTML = h;
+    if (info.body != null) {
+      let parsed; try { parsed = JSON.parse(info.body); } catch (e) {}
+      if (parsed !== undefined && parsed !== null && typeof parsed === 'object') JsonView($('#jvb'), parsed, { depth: 4 });
+      else $('#jvb').innerHTML = `<pre class="code">${esc(info.body)}</pre>`;
+    }
+  } else {
+    if (st === 'run' && !r) { ib.innerHTML = '<div class="empty"><div class="big"><span class="sd run"></span></div><b>Running…</b></div>'; return; }
+    if (!r) {
+      const need = [...info.unresolved, ...info.empty];
+      ib.innerHTML = `<div class="empty"><div class="big"><svg width="18" height="20" viewBox="0 0 10 11"><path d="M1 1v9l8-4.5z" fill="currentColor"/></svg></div><b>No response yet</b>
+        <p>This collection has no saved responses. Run the request to see the live response here.</p>
+        ${need.length ? `<div class="note" style="text-align:left"><span>${need.map((k) => `<b>${esc(k)}</b>`).join(', ')} ${need.length === 1 ? 'is' : 'are'} not set.</span><button class="btn sm" data-act="vars">Set variables</button></div><br>` : ''}
+        <button class="btn pri" data-act="run">▶ Run request</button></div>`;
+      return;
+    }
+    if (r.error) {
+      ib.innerHTML = `<div class="statusbar"><span class="pill err">Failed</span><span class="mt">${fmtMs(r.timeMs)}</span></div><div class="note err">${esc(r.error)}</div>`;
+      return;
+    }
+    const json = jsonOf(r);
+    let chips = '';
+    if (json && typeof json === 'object' && !Array.isArray(json)) {
+      chips = Object.keys(json).slice(0, 40).map((k) => { const v = json[k]; return Array.isArray(v) ? `<span class="chip"><b>${v.length}</b> ${esc(k)}</span>` : typeof v === 'boolean' ? `<span class="chip${/more|next|truncat/i.test(k) && v ? ' warn' : ''}">${esc(k)} <b>${v}</b></span>` : ''; }).join('');
+    } else if (Array.isArray(json)) chips = `<span class="chip"><b>${json.length}</b> items</span>`;
+    ib.innerHTML = `<div class="statusbar"><span class="pill ${st}">${r.status} ${esc(r.statusText || '')}</span><span class="mt">${fmtMs(r.timeMs)}</span><span class="mt">${fmtBytes(r.size)}</span><span class="mt">${esc((r.contentType || '').split(';')[0])}</span><span class="mt" style="margin-left:auto">${new Date(r.at).toLocaleTimeString()}</span></div>
+      ${chips ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px">${chips}</div>` : ''}
+      <div class="sec" style="margin-top:10px"><div id="jv"></div></div>
+      <div class="sec"><h4>Response headers</h4><table class="kv">${(r.headers || []).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>`;
+    const jv = $('#jv');
+    if (json !== undefined && json !== null && typeof json === 'object') JsonView(jv, json, jvOpts({ q: S.jsonQ, onQuery: (q) => { S.jsonQ = q; } }));
+    else if (r.binary) {
+      const src = '/api/body?key=' + encodeURIComponent(rkey(n)) + '&t=' + r.at;
+      jv.innerHTML = /pdf/i.test(r.contentType) ? `<iframe class="pdf" src="${src}"></iframe>` : /^image\//i.test(r.contentType) ? `<img src="${src}" style="max-width:100%;border:1px solid var(--line);border-radius:8px">` : `<div class="note" style="border-color:var(--line);background:var(--panel);color:var(--text2)">Binary response (${esc(r.contentType || 'unknown type')}, ${fmtBytes(r.size)}). <a href="${src}" target="_blank">Open</a></div>`;
+    } else jv.innerHTML = r.text ? `<pre class="code">${esc(r.text.length > 800000 ? r.text.slice(0, 800000) + '\n… truncated' : r.text)}</pre>` : '<span style="color:var(--muted)">Empty body</span>';
+  }
+}
+
+/* ================= running ================= */
+async function run(n) {
+  const info = reqInfo(n), key = rkey(n);
+  if (info.unresolved.length) {
+    S.results[key] = { error: `Undefined variable ${info.unresolved.map((v) => `{{${v}}}`).join(', ')} — add it under Variables.`, at: Date.now(), timeMs: 0 };
+    return afterRun(n);
+  }
+  S.running.add(n.id); paintStatus(n);
+  try {
+    const resp = await fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, method: info.method, url: info.url, headers: Object.fromEntries(info.headers.map((h) => [h.key, h.value])), body: info.body }) });
+    const j = await resp.json();
+    S.results[key] = j.at ? j : { error: j.error || 'Request could not be sent', at: Date.now(), timeMs: 0 };
+  } catch (e) {
+    S.results[key] = { error: 'The local server is not reachable — is `node viewer/server.js` still running?', at: Date.now(), timeMs: 0 };
+  }
+  S.running.delete(n.id); afterRun(n);
+}
+function paintStatus(n) { renderSide(); renderDiagram(); renderStats(); if (S.sel === n.id) renderInspector(); }
+function afterRun(n) { computeLinks(); paintStatus(n); }
+async function runMany(list) {
+  if (S.batch) { S.batch.stop = true; return; }
+  const R = resolver(), used = usedVars(), missing = [...used].filter((k) => !R.defs.has(k) || R.defs.get(k).value === '');
+  if (missing.length) { openVars(`Set ${missing.join(', ')} first — requests that use ${missing.length === 1 ? 'it' : 'them'} would be rejected.`); return; }
+  const unsafe = list.filter((n) => !SAFE.includes(n.method));
+  let skip = new Set();
+  if (unsafe.length && !confirm(`${unsafe.length} of these ${list.length} requests can change data on the server:\n\n${unsafe.map((n) => `• ${n.method}  ${n.name}`).join('\n')}\n\nOK = send them too\nCancel = run only the read-only requests`)) skip = new Set(unsafe);
+  const todo = list.filter((n) => !skip.has(n));
+  S.batch = { done: 0, total: todo.length, stop: false };
+  renderStats();
+  for (const n of todo) {
+    if (S.batch.stop) break;
+    await run(n); S.batch.done++; renderStats();
+  }
+  const stopped = S.batch.stop; S.batch = null; renderStats();
+  toast(stopped ? 'Stopped' : `Ran ${todo.length} request${todo.length === 1 ? '' : 's'}${skip.size ? ` · skipped ${skip.size} that change data` : ''}`);
+}
+
+/* ================= variables dialog ================= */
+function openVars(msg) {
+  const defs = [...varDefs().values()], used = usedVars();
+  const m = $('#modal');
+  m.innerHTML = `<div class="dlg"><h3>Variables</h3><p>${msg ? `<span style="color:#92400e">${esc(msg)}</span><br>` : ''}Values you type here are kept in this tool's memory only — they are never written to disk and are gone when the local server stops.</p>
+    <div class="bd" id="vrows">${defs.map((d) => vrow(d, used.has(d.key))).join('')}</div>
+    <div class="bd"><button class="btn sm" id="vadd">+ Add variable</button></div>
+    <div class="ft"><button class="btn" data-x="1">Cancel</button><button class="btn pri" id="vsave">Save</button></div></div>`;
+  m.classList.add('on');
+  const first = $('#vrows input.bad') || $('#vrows input'); if (first) first.focus();
+  function vrow(d, isUsed) {
+    return `<div class="vr"><div class="k" title="${esc(d.key)}">${esc(d.key)}<small>${esc(d.src)}${isUsed ? '' : ' · unused'}</small></div><input data-k="${esc(d.key)}" data-base="${esc(d.base || '')}" type="${d.secret ? 'password' : 'text'}" value="${esc(d.value)}" class="${isUsed && d.value === '' ? 'bad' : ''}" placeholder="${d.secret ? 'paste secret value' : 'value'}" autocomplete="off" spellcheck="false">${d.secret ? '<button class="btn sm" data-show="1">Show</button>' : '<span></span>'}</div>`;
+  }
+  m.onclick = (e) => {
+    const t = e.target;
+    if (t === m || t.dataset.x) return m.classList.remove('on');
+    if (t.dataset.show) { const i = t.previousElementSibling; i.type = i.type === 'password' ? 'text' : 'password'; t.textContent = i.type === 'password' ? 'Show' : 'Hide'; }
+    if (t.id === 'vadd') { const k = prompt('Variable name'); if (k && k.trim()) $('#vrows').insertAdjacentHTML('beforeend', vrow({ key: k.trim(), value: '', src: 'custom', secret: SECRET_RE.test(k) }, used.has(k.trim()))); }
+    if (t.id === 'vsave') saveVars();
+  };
+  m.onkeydown = (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') saveVars(); };
+  async function saveVars() {
+    const o = {};
+    $$('#vrows input').forEach((i) => { if (i.value !== i.dataset.base) o[i.dataset.k] = i.value; });
+    S.overrides = o;
+    try { await fetch('/api/vars', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vars: o }) }); } catch (e) {}
+    m.classList.remove('on'); computeLinks(); renderAll(); toast('Variables saved');
+  }
+}
+function openMore() {
+  const m = $('#modal');
+  m.innerHTML = `<div class="dlg" style="width:min(460px,92vw)"><h3>Workspace &amp; responses</h3><p>Files are read from <code>${esc(S.wsDir || '')}</code></p>
+    <div class="bd" style="display:grid;gap:8px;padding-bottom:6px">
+      <button class="btn" id="mRel">Reload files from disk</button>
+      <button class="btn" id="mImp">Import a collection or environment file for this session…</button>
+      <button class="btn" id="mExp">Export all responses as one JSON file</button>
+      <button class="btn" id="mClr">Clear all responses</button>
+      <input type="file" id="mFile" accept=".json,application/json" multiple hidden></div>
+    <div class="ft"><button class="btn" data-x="1">Close</button></div></div>`;
+  m.classList.add('on');
+  m.onkeydown = null;
+  m.onclick = async (e) => {
+    const t = e.target;
+    if (t === m || t.dataset.x) return m.classList.remove('on');
+    if (t.id === 'mImp') $('#mFile').click();
+    if (t.id === 'mRel') { m.classList.remove('on'); await reloadBoot(); openWorkspace(S.ws, { keepSel: true }); toast('Reloaded from disk'); }
+    if (t.id === 'mExp') {
+      const out = S.reqs.map((n) => { const r = resOf(n); return { step: n.order, name: n.name, folder: pathOf(n).map((x) => x.name).join(' / '), method: n.method, url: urlTpl(n), response: r ? { status: r.status, statusText: r.statusText, timeMs: r.timeMs, size: r.size, error: r.error, headers: r.headers, body: jsonOf(r) !== undefined ? jsonOf(r) : r.binary ? `(binary ${r.contentType})` : r.text } : null }; });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' })); a.download = 'responses.json'; a.click();
+    }
+    if (t.id === 'mClr') { await fetch('/api/clear', { method: 'POST' }).catch(() => {}); S.results = {}; m.classList.remove('on'); computeLinks(); renderAll(); toast('Responses cleared'); }
+  };
+  $('#mFile').onchange = (e) => { importFiles(e.target.files); m.classList.remove('on'); };
+}
+async function importFiles(files) {
+  let lastCol = null;
+  for (const f of files) {
+    try {
+      const data = JSON.parse(await f.text());
+      if (Array.isArray(data.item)) { S.boot.collections = S.boot.collections.filter((c) => c.file !== f.name).concat({ file: f.name, data }); lastCol = f.name; }
+      else if (Array.isArray(data.values)) { S.boot.environments = S.boot.environments.filter((c) => c.file !== f.name).concat({ file: f.name, data }); toast('Environment loaded: ' + (data.name || f.name)); }
+      else toast(f.name + ' is not a Postman collection or environment');
+    } catch (e) { toast(f.name + ' is not valid JSON'); }
+  }
+  if (lastCol) loadCollection(lastCol); else if (S.col) renderAll();
+}
+
+/* ================= global search ================= */
+function countHits(text, q) {
+  if (!text._lc) return 0;
+  let c = 0, i = -1;
+  while ((i = text._lc.indexOf(q, i + 1)) > -1 && c < 9999) c++;
+  return c;
+}
+function renderGlobal() {
+  const q = S.q.toLowerCase(), box = $('#gres');
+  if (!q) { box.classList.remove('on'); return; }
+  const byName = S.reqs.filter((n) => matchesQ(n, q) || pathOf(n).some((f) => f.name.toLowerCase().includes(q)));
+  const byBody = [];
+  S.reqs.forEach((n) => { const c = bodyHits(n, q); if (c) byBody.push({ n, c }); });
+  const item = (n, extra, body) => `<div class="gr" data-id="${n.id}" ${body ? 'data-body="1"' : ''}><span class="m ${mClass(n.method)}">${mShort(n.method)}</span><span class="nm">${esc(n.name)} <span class="sub">${esc(trunc(pathOf(n).map((x) => x.name).join(' › '), 46))}</span></span>${extra}</div>`;
+  const ran = S.reqs.some((n) => resOf(n));
+  box.innerHTML = (byName.length ? `<h6>Requests · ${byName.length}</h6>` + byName.slice(0, 12).map((n) => item(n, `<span class="sub">${esc(trunc(pathLabel(n), 34))}</span>`)).join('') : '')
+    + (byBody.length ? `<h6>Inside responses · ${byBody.reduce((a, b) => a + b.c, 0)} matches</h6>` + byBody.map((b) => item(b.n, `<span class="cnt">${b.c} match${b.c === 1 ? '' : 'es'}</span>`, true)).join('') : '')
+    || `<div class="gempty">No matches for “${esc(S.q)}”${ran ? '' : ' — responses become searchable once you run the requests'}</div>`;
+  box.classList.add('on');
+}
+
+/* ================= wiring ================= */
+function renderDiagram() {
+  $('#map').style.display = S.view === 'map' ? '' : 'none';
+  $('#seq').style.display = S.view === 'seq' ? 'block' : 'none';
+  $('#zoom').style.display = $('#hint').style.display = S.view === 'map' ? '' : 'none';
+  $$('#views button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.view));
+  if (S.view === 'map') renderMap(); else renderSeq();
+}
+function renderAll() { document.body.classList.toggle('has-insp', !!(S.sel && S.byId[S.sel])); renderSide(); renderDiagram(); renderStats(); renderInspector(); syncHash(); }
+function select(id, opts = {}) {
+  const n = S.byId[id]; if (!n) return;
+  if (opts.q != null) { S.jsonQ = opts.q; S.tab = 'response'; }
+  else if (S.sel !== id) S.jsonQ = '';
+  S.sel = id;
+  for (let x = n.parent; x; x = x.parent) { S.collapsed.delete(x.id); S.sideClosed.delete(x.id); }
+  renderAll();
+  if (S.view === 'map') revealInMap(n);
+  else {
+    const el = $(`#seq .sr[data-id="${id}"]`), box = $('#seq');
+    if (el) { const r = el.getBoundingClientRect(), c = box.getBoundingClientRect(); if (r.top < c.top + 60 || r.bottom > c.bottom - 20) box.scrollTop += r.top - c.top - c.height / 2 + 30; }
+  }
+  const t = $('#tree .tn.sel'); if (t) t.scrollIntoView({ block: 'nearest' });
+}
+function syncHash() {
+  const h = new URLSearchParams();
+  if (S.ws) h.set('ws', S.ws);
+  if (S.view !== 'map') h.set('view', S.view);
+  if (S.sel) { h.set('sel', S.sel); if (S.tab !== 'response') h.set('tab', S.tab); }
+  history.replaceState(null, '', location.pathname + (h.toString() ? '#' + h : ''));
+}
+
+$('#tree').addEventListener('click', (e) => {
+  const row = e.target.closest('.tn'); if (!row) return;
+  const n = S.byId[row.dataset.id];
+  if (n.kind !== 'request' && e.target.closest('[data-tw]')) { S.sideClosed.has(n.id) ? S.sideClosed.delete(n.id) : S.sideClosed.add(n.id); return renderSide(); }
+  select(n.id);
+});
+$('#views').addEventListener('click', (e) => { const v = e.target.dataset.v; if (v) { S.view = v; renderDiagram(); syncHash(); if (v === 'map') fitMap(); } });
+$('#stats').addEventListener('click', (e) => { if (e.target.closest('#tLinks')) { S.showLinks = !S.showLinks; renderStats(); renderDiagram(); } });
+$('#seq').addEventListener('click', (e) => { const g = e.target.closest('.sr'); if (g) select(g.dataset.id); });
+$('#bVars').onclick = () => openVars();
+$('#bBanner').onclick = () => openVars();
+$('#bMore').onclick = openMore;
+$('#bRun').onclick = () => runMany(S.reqs);
+$('#colname').addEventListener('change', (e) => { if (e.target.id === 'colsel') loadCollection(e.target.value); });
+$('#zoom').addEventListener('click', (e) => { const z = e.target.dataset.z; if (z === 'fit') fitMap(); else if (z) zoomBy(z === 'in' ? 1.2 : 1 / 1.2); });
+
+$('#insp').addEventListener('click', (e) => {
+  const t = e.target, n = S.byId[S.sel];
+  if (!n) return;
+  if (t.dataset.tab) { S.tab = t.dataset.tab; renderInspector(); return syncHash(); }
+  const go = t.closest('[data-go]'); if (go && !t.closest('.jv')) return select(go.dataset.go);
+  const row = t.closest('.rl tr'); if (row) return select(row.dataset.id);
+  const act = t.closest('[data-act]'); if (!act) return;
+  const a = act.dataset.act;
+  if (a === 'close') { S.sel = null; renderAll(); }
+  if (a === 'vars') openVars();
+  if (a === 'curl') copy(curlOf(reqInfo(n)), 'cURL copied (includes your token)');
+  if (a === 'runFolder') runMany(leaves(n));
+  if (a === 'run') {
+    if (!SAFE.includes(n.method) && !confirm(`${n.method} "${n.name}" can change data on ${hostOf(n)}.\n\nSend it?`)) return;
+    S.tab = 'response'; run(n);
+  }
+});
+
+/* map pan / zoom / click */
+(() => {
+  const el = $('#map'); let drag = null;
+  el.addEventListener('mousedown', (e) => { drag = { x: e.clientX, y: e.clientY, zx: S.z.x, zy: S.z.y, moved: false }; });
+  window.addEventListener('mousemove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+    drag.moved = true; el.classList.add('drag'); S.z.x = drag.zx + dx; S.z.y = drag.zy + dy; applyZ();
+  });
+  window.addEventListener('mouseup', (e) => {
+    if (!drag) return;
+    const moved = drag.moved; drag = null; el.classList.remove('drag');
+    if (moved || !el.contains(e.target)) return;
+    const g = e.target.closest('.mn'); if (!g) return;
+    const n = S.byId[g.dataset.id];
+    if (e.target.closest('[data-tg]')) { S.collapsed.has(n.id) ? S.collapsed.delete(n.id) : S.collapsed.add(n.id); return renderMap(); }
+    select(n.id);
+  });
+  el.addEventListener('dblclick', (e) => { const g = e.target.closest('.mn'); const n = g && S.byId[g.dataset.id]; if (n && n.kind === 'folder') { S.collapsed.has(n.id) ? S.collapsed.delete(n.id) : S.collapsed.add(n.id); renderMap(); } });
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) { const r = el.getBoundingClientRect(); zoomBy(Math.exp(-e.deltaY * 0.01), e.clientX - r.left, e.clientY - r.top); }
+    else { S.z.x -= e.deltaX; S.z.y -= e.deltaY; applyZ(); }
+  }, { passive: false });
+})();
+
+/* inspector resize */
+(() => {
+  const sp = $('#split'); let on = false;
+  sp.addEventListener('mousedown', (e) => { on = true; sp.classList.add('on'); e.preventDefault(); });
+  window.addEventListener('mousemove', (e) => { if (on) document.documentElement.style.setProperty('--iw', Math.max(380, window.innerWidth - e.clientX) + 'px'); });
+  window.addEventListener('mouseup', () => { if (on) { on = false; sp.classList.remove('on'); if (S.view === 'seq') renderSeq(); } });
+})();
+
+/* global search */
+const gq = $('#gq');
+gq.addEventListener('input', debounce(() => { S.q = gq.value.trim(); renderSide(); renderGlobal(); }, 120));
+gq.addEventListener('focus', renderGlobal);
+gq.addEventListener('keydown', (e) => {
+  const items = $$('#gres .gr'); let i = items.findIndex((x) => x.classList.contains('act'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!items.length) return; items.forEach((x) => x.classList.remove('act')); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; items[i].classList.add('act'); items[i].scrollIntoView({ block: 'nearest' }); }
+  if (e.key === 'Enter') { const it = items[i < 0 ? 0 : i]; if (it) it.click(); }
+  if (e.key === 'Escape') { gq.value = ''; S.q = ''; renderSide(); renderGlobal(); gq.blur(); }
+});
+$('#gres').addEventListener('mousedown', (e) => e.preventDefault());
+$('#gres').addEventListener('click', (e) => {
+  const it = e.target.closest('.gr'); if (!it) return;
+  const q = S.q; $('#gres').classList.remove('on');
+  select(it.dataset.id, it.dataset.body ? { q } : {});
+});
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('.gsearch')) $('#gres').classList.remove('on'); });
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); gq.focus(); gq.select(); }
+  if (e.key === 'Escape') {
+    if ($('#modal').classList.contains('on')) return $('#modal').classList.remove('on');
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') return document.activeElement.blur();
+    if (S.sel) { S.sel = null; renderAll(); }
+  }
+});
+window.addEventListener('resize', debounce(() => { if (S.col && S.view === 'seq') renderSeq(); }, 150));
+
+/* drag & drop import */
+(() => {
+  let depth = 0; const d = $('#drop');
+  const isFile = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  window.addEventListener('dragenter', (e) => { if (isFile(e)) { depth++; d.classList.add('on'); } });
+  window.addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; d.classList.remove('on'); } });
+  window.addEventListener('dragover', (e) => { if (isFile(e)) e.preventDefault(); });
+  window.addEventListener('drop', (e) => { if (!isFile(e)) return; e.preventDefault(); depth = 0; d.classList.remove('on'); importFiles(e.dataTransfer.files); });
+})();
+
+/* workspaces */
+async function reloadBoot() {
+  try {
+    const b = await (await fetch('/api/bootstrap')).json();
+    S.boot.workspaces = b.workspaces || []; S.boot.root = b.root; S.overrides = b.vars || {}; S.results = b.results || {};
+  } catch (e) { toast('Could not reach the local server'); }
+}
+function renderLaunch() {
+  const wss = S.boot.workspaces;
+  $('#lroot').textContent = S.boot.root || 'gobiman/collections/';
+  $('#cards').innerHTML = wss.map((w) => {
+    const reqs = w.collections.reduce((a, c) => a + (function cnt(items) { return (items || []).reduce((x, i) => x + (Array.isArray(i.item) ? cnt(i.item) : 1), 0); })(c.data.item), 0);
+    return `<div class="card${w.broken.length ? ' warn' : ''}" data-ws="${esc(w.name)}"><div class="nm"><svg width="18" height="16" viewBox="0 0 18 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 3.5A1.5 1.5 0 0 1 3 2h4l2 2h6a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H3a1.5 1.5 0 0 1-1.5-1.5z"/></svg>${esc(w.name)}</div>
+      <ul>${w.collections.map((c) => `<li title="${esc(c.file)}">${esc((c.data.info && c.data.info.name) || c.file)}</li>`).join('')}${w.broken.map((f) => `<li style="color:#b45309">⚠ ${esc(f)} is not valid JSON</li>`).join('')}</ul>
+      <div class="ft">${reqs} request${reqs === 1 ? '' : 's'} · ${w.collections.length} collection${w.collections.length === 1 ? '' : 's'} · ${w.environments.length} environment${w.environments.length === 1 ? '' : 's'}</div></div>`;
+  }).join('') || '<div class="gempty" style="grid-column:1/-1">No workspaces found yet.</div>';
+  $('#lhint').innerHTML = `<b>Add a workspace:</b> create a folder inside <code>${esc(S.boot.root || 'gobiman/collections')}</code>, copy your <code>*.postman_collection.json</code> (and optional <code>*.postman_environment.json</code>) files into it, then <a href="#" id="lReload">reload</a>. Files are read fresh every time you open this screen.`;
+  $('#launch').classList.add('on');
+}
+function openWorkspace(name, opts = {}) {
+  const w = S.boot.workspaces.find((x) => x.name === name);
+  if (!w) return renderLaunch();
+  const prevSel = opts.keepSel ? S.sel : null, prevFile = opts.keepSel ? S.file : null;
+  S.ws = w.name; S.wsDir = w.dir; S.boot.collections = w.collections; S.boot.environments = w.environments;
+  $('#launch').classList.remove('on');
+  $('#bWs').innerHTML = `<svg width="14" height="12" viewBox="0 0 18 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1.5 3.5A1.5 1.5 0 0 1 3 2h4l2 2h6a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H3a1.5 1.5 0 0 1-1.5-1.5z"/></svg>${esc(w.name)}`;
+  try { localStorage.setItem('gobiman.ws', w.name); } catch (e) {}
+  if (!w.collections.length) { S.col = null; $('#blank').style.display = 'grid'; $('#colname').textContent = ''; $('#tree').innerHTML = ''; $('#stats').innerHTML = ''; return; }
+  const file = prevFile && w.collections.some((c) => c.file === prevFile) ? prevFile : w.collections[0].file;
+  loadCollection(file);
+  if (prevSel && S.byId[prevSel]) select(prevSel);
+}
+$('#bWs').onclick = () => { renderLaunch(); };
+$('#launch').addEventListener('click', async (e) => {
+  if (e.target.id === 'lReload') { e.preventDefault(); await reloadBoot(); renderLaunch(); toast('Reloaded'); return; }
+  const c = e.target.closest('.card'); if (c) openWorkspace(c.dataset.ws);
+});
+
+/* boot */
+(async () => {
+  await reloadBoot();
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get('view') === 'seq') S.view = 'seq';
+  if (h.get('tab')) S.tab = h.get('tab');
+  const wss = S.boot.workspaces;
+  let last = null; try { last = localStorage.getItem('gobiman.ws'); } catch (e) {}
+  const want = h.get('ws') || (wss.length === 1 ? wss[0].name : null) || (last && wss.some((w) => w.name === last) ? last : null);
+  if (!want) return renderLaunch();
+  openWorkspace(want);
+  if (h.get('sel') && S.byId[h.get('sel')]) { select(h.get('sel')); requestAnimationFrame(fitMap); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Each user's Postman collections stay on their machine.
+# Only the public demo workspace is committed so newcomers have something to click.
+collections/*
+!collections/demo-petstore/
+
+.DS_Store
+*.log
+node_modules/
