@@ -10,8 +10,8 @@
 // The server serves the web app and proxies API calls so the browser isn't blocked by
 // CORS. Variables (incl. tokens) and responses live in memory only — nothing is written
 // to disk. A .env file next to this script (KEY=VALUE per line) is loaded automatically;
-// env vars named GOBIMAN_VAR_<name> pre-fill Postman variables of that name, and a few
-// known aliases (e.g. ACCRUAL_BEARER_TOKEN -> "accrualToken") are also recognized.
+// env vars named GOBIMAN_VAR_<name> pre-fill Postman variables of that name; GOBIMAN_VAR_ALIASES
+// maps a variable to any other env var name (e.g. "apiToken=MY_API_TOKEN,other=OTHER_TOKEN").
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -38,11 +38,11 @@ loadDotEnv(path.join(__dirname, '.env'));
 
 const state = { vars: {}, results: {}, bodies: {} };
 Object.keys(process.env).forEach((k) => { if (k.startsWith('GOBIMAN_VAR_')) state.vars[k.slice(12)] = process.env[k]; });
-// Known aliases so a collection's expected env var name can be dropped straight into .env
-// (e.g. ACCRUAL_BEARER_TOKEN -> the "accrualToken" collection variable) with no GOBIMAN_VAR_ prefix.
-const ENV_VAR_ALIASES = { accrualToken: 'ACCRUAL_BEARER_TOKEN' };
-Object.entries(ENV_VAR_ALIASES).forEach(([varName, envName]) => {
-    if (state.vars[varName] === undefined && process.env[envName]) state.vars[varName] = process.env[envName];
+// Aliases, so a token already in .env under its own name can fill a collection variable with no
+// GOBIMAN_VAR_ prefix: GOBIMAN_VAR_ALIASES="apiToken=MY_API_TOKEN,other=OTHER_TOKEN".
+(process.env.GOBIMAN_VAR_ALIASES || '').split(',').forEach((pair) => {
+    const [varName, envName] = pair.split('=').map((x) => x && x.trim());
+    if (varName && envName && state.vars[varName] === undefined && process.env[envName]) state.vars[varName] = process.env[envName];
 });
 
 function readJsonFiles(dir, suffix) {

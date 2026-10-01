@@ -2,6 +2,12 @@
 
 **Gobiman is a zero-dependency local web app that turns any Postman collection into an interactive mind map and sequence diagram, runs the requests, and lets you explore every response in a searchable, collapsible JSON viewer.**
 
+![The mind map after a run: collection → folders → requests, each with its status, time and size](docs/mindmap.jpg)
+
+![The same run as a client ↔ API sequence diagram, grouped by folder](docs/sequence.jpg)
+
+![The inspector: resolved URL and the response in a collapsible, searchable JSON tree](docs/inspector.jpg)
+
 ## Run it
 
 ```bash
@@ -18,9 +24,6 @@ Every folder inside `gobiman/collections/` is a **workspace**:
 
 ```
 gobiman/collections/
-├── accrual/                                  ← workspace
-│   ├── Accrual-API-Calls.postman_collection.json
-│   └── Accrual-Local.postman_environment.json
 ├── demo-petstore/                            ← workspace (public API, works without a token)
 │   └── petstore.postman_collection.json
 ├── demo-jsonplaceholder/                     ← workspace (public API, 8 read-only requests in 4 folders)
@@ -41,7 +44,7 @@ To read collections from somewhere else: `node server.js /path/to/folder`.
 Click **Variables** and paste any secret (e.g. a bearer token). Values live in the server's memory only — never written to disk, gone when the server stops. To pre-fill one at start:
 
 ```bash
-GOBIMAN_VAR_accrualToken=eyJ... node server.js
+GOBIMAN_VAR_apiToken=eyJ... node server.js
 ```
 
 ## What you get
@@ -57,7 +60,7 @@ GOBIMAN_VAR_accrualToken=eyJ... node server.js
 | **Run** | Run one request, a folder, or everything in order. Requests that change data (PUT/POST/…) always ask first. Stop button while running. |
 | **⋯ menu** | Reload files from disk, import a file just for this session (or drag-drop it onto the page), export all responses as one JSON, clear responses. |
 
-The URL hash (`#ws=accrual&sel=0-1&view=seq`) is a shareable deep link.
+The URL hash (`#ws=demo-jsonplaceholder&sel=1-2&view=seq`) is a shareable deep link.
 
 ## How it works
 
