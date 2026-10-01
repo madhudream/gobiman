@@ -1272,7 +1272,7 @@ window.addEventListener('resize', debounce(() => { if (S.col && S.view === 'seq'
 async function reloadBoot() {
   try {
     const b = await (await fetch('/api/bootstrap')).json();
-    S.boot.workspaces = b.workspaces || []; S.boot.root = b.root; S.overrides = b.vars || {}; S.results = b.results || {};
+    S.boot.workspaces = b.workspaces || []; S.boot.root = b.root; S.boot.hosted = !!b.hosted; S.overrides = b.vars || {}; S.results = b.results || {};
   } catch (e) { toast('Could not reach the local server'); }
 }
 function renderLaunch() {
