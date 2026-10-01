@@ -9,7 +9,9 @@
 // directly in the collections folder form a workspace of their own.
 // The server serves the web app and proxies API calls so the browser isn't blocked by
 // CORS. Variables (incl. tokens) and responses live in memory only — nothing is written
-// to disk. Env vars named GOBIMAN_VAR_<name> pre-fill Postman variables.
+// to disk. A .env file next to this script (KEY=VALUE per line) is loaded automatically;
+// env vars named GOBIMAN_VAR_<name> pre-fill Postman variables of that name, and a few
+// known aliases (e.g. ACCRUAL_BEARER_TOKEN -> "accrualToken") are also recognized.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -19,8 +21,29 @@ const PORT = Number(process.env.GOBIMAN_PORT || process.env.PORT) || 4600;
 const HOST = '127.0.0.1';
 const TIMEOUT_MS = 120000;
 
+// Load a .env file (if present) next to this script, without overriding real env vars
+// or any external dependency (simple KEY=VALUE parser, '#' comments, optional quotes).
+function loadDotEnv(file) {
+    let text;
+    try { text = fs.readFileSync(file, 'utf8'); } catch (e) { return; }
+    text.split(/\r?\n/).forEach((line) => {
+        const m = /^\s*(?:export\s+)?([\w.-]+)\s*=\s*(.*)\s*$/.exec(line);
+        if (!m || line.trim().startsWith('#')) return;
+        let val = m[2];
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
+        if (process.env[m[1]] === undefined) process.env[m[1]] = val;
+    });
+}
+loadDotEnv(path.join(__dirname, '.env'));
+
 const state = { vars: {}, results: {}, bodies: {} };
 Object.keys(process.env).forEach((k) => { if (k.startsWith('GOBIMAN_VAR_')) state.vars[k.slice(12)] = process.env[k]; });
+// Known aliases so a collection's expected env var name can be dropped straight into .env
+// (e.g. ACCRUAL_BEARER_TOKEN -> the "accrualToken" collection variable) with no GOBIMAN_VAR_ prefix.
+const ENV_VAR_ALIASES = { accrualToken: 'ACCRUAL_BEARER_TOKEN' };
+Object.entries(ENV_VAR_ALIASES).forEach(([varName, envName]) => {
+    if (state.vars[varName] === undefined && process.env[envName]) state.vars[varName] = process.env[envName];
+});
 
 function readJsonFiles(dir, suffix) {
     let names = [];

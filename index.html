@@ -56,7 +56,9 @@ input{font:inherit;color:inherit}
 
 /* ---------- layout ---------- */
 .app{display:flex;height:calc(100vh - 54px)}
-#side{width:292px;flex:none;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+#side{width:var(--sw,292px);min-width:180px;max-width:70vw;flex:none;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+#sidesplit{width:5px;flex:none;cursor:col-resize;background:transparent;margin-left:-5px;z-index:5;position:relative}
+#sidesplit:hover,#sidesplit.on{background:var(--accent-line)}
 #side .hd{padding:10px 14px 6px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600;display:flex;justify-content:space-between}
 #tree{overflow:auto;padding:0 6px 14px;flex:1}
 .tn{display:flex;align-items:center;gap:6px;height:28px;padding-right:8px;border-radius:7px;cursor:pointer;white-space:nowrap;padding-left:calc(6px + var(--d)*14px)}
@@ -121,6 +123,7 @@ input{font:inherit;color:inherit}
 .meta{font:11px var(--mono);fill:var(--muted)}
 /* sequence */
 .sr{cursor:pointer}
+.docchip{cursor:pointer}
 .sr .bg{fill:transparent}
 .sr:hover .bg{fill:#f6f7fb}
 .sr.sel .bg{fill:var(--accent-soft);stroke:var(--accent-line)}
@@ -279,6 +282,7 @@ mark{background:#fde047;color:inherit;border-radius:2px;padding:0 1px}
     <div class="hd"><span>Collection</span><span id="sidecount"></span></div>
     <div id="tree"></div>
   </aside>
+  <div id="sidesplit" title="Drag to resize"></div>
   <section id="main">
     <div id="mhead">
       <div class="seg" id="views">
@@ -340,6 +344,7 @@ const S = {
   boot: { workspaces: [], collections: [], environments: [] }, ws: null, file: null, col: null, root: null, byId: {}, reqs: [],
   overrides: {}, results: {}, sel: null, tab: 'response', view: 'map', collapsed: new Set(), sideClosed: new Set(),
   running: new Set(), links: [], tokens: new Map(), showLinks: true, z: { k: 1, x: 40, y: 40 }, q: '', batch: null, jsonQ: '',
+  seqDocSel: {},
 };
 const rkey = (n) => S.ws + '/' + S.file + '::' + n.id;
 const resOf = (n) => S.results[rkey(n)];
@@ -368,7 +373,7 @@ function loadCollection(file) {
   const entry = S.boot.collections.find((c) => c.file === file);
   if (!entry) return;
   const data = entry.data;
-  S.file = file; S.col = data; S.byId = {}; S.reqs = []; S.collapsed = new Set(); S.sideClosed = new Set(); S.sel = null;
+  S.file = file; S.col = data; S.byId = {}; S.reqs = []; S.collapsed = new Set(); S.sideClosed = new Set(); S.sel = null; S.seqDocSel = {};
   const root = { id: 'root', kind: 'root', name: (data.info && data.info.name) || file, desc: descOf(data.info && data.info.description), children: [], depth: 0, branch: 0 };
   (function build(items, parent, prefix) {
     (items || []).forEach((it, i) => {
@@ -754,6 +759,31 @@ function revealInMap(n) {
 }
 
 /* ================= sequence diagram ================= */
+// A folder whose children are all folders sharing the exact same ordered set of
+// request steps (e.g. "Doc 1..7" each doing metadata/raw/citations) is a repeated
+// "loop" group: the diagram shows one representative iteration + a doc switcher
+// instead of stamping out the same 3 requests N times.
+function loopGroupOf(n) {
+  if (n.kind !== 'folder' || !n.children || n.children.length < 2) return null;
+  if (n._loopCache !== undefined) return n._loopCache;
+  const shape = (f) => (f.kind === 'folder' ? f.children.map((c) => c.kind + ':' + c.method + ':' + c.name).join('|') : null);
+  const s0 = shape(n.children[0]);
+  const lg = s0 && n.children.every((c) => shape(c) === s0) ? { items: n.children, shape: s0 } : null;
+  return (n._loopCache = lg);
+}
+// A request that's polled repeatedly (per its description) gets a "repeats" badge
+// instead of looking like a single one-shot call.
+function pollInfoOf(n) {
+  if (n.kind !== 'request') return null;
+  if (n._pollCache !== undefined) return n._pollCache;
+  const m = /poll(?:ed)?\s+every\s*~?(\d+)\s*s.*?up to\s*(\d+)\s*attempt/i.exec(n.desc || '');
+  const info = m ? { every: +m[1], max: +m[2] } : /\bpoll(?:ed|ing|s)?\b/i.test(n.name || '') ? { every: null, max: null } : null;
+  return (n._pollCache = info);
+}
+function chipLayout(count, availW) {
+  const chipW = 108, gap = 6, perRow = Math.max(1, Math.floor((availW + gap) / (chipW + gap)));
+  return { chipW, gap, perRow, rows: Math.ceil(count / perRow) };
+}
 function renderSeq() {
   const hosts = [...new Set(S.reqs.map(hostOf))];
   const GUT = 318, CX = GUT + 40, LANE = Math.max(330, Math.min(460, ($('#stage').clientWidth || 900) - CX - 150));
@@ -762,20 +792,40 @@ function renderSeq() {
   const rows = [], frames = [];
   let y = 66;
   (function walk(n) {
-    if (n.kind === 'request') { rows.push({ n, y }); y += 56; return; }
+    if (n.kind === 'request') { rows.push({ n, y }); y += pollInfoOf(n) ? 62 : 56; return; }
     if (n.kind === 'root') return n.children.forEach(walk);
-    const f = { n, y0: y, d: n.depth - 1 }; y += 30;
-    n.children.forEach(walk);
+    const lg = loopGroupOf(n), d = n.depth - 1;
+    const f = { n, y0: y, d }; y += 30;
+    if (lg) {
+      const availW = W - 2 * (6 + d * 10) - 24;
+      f.loop = lg; f.cr = chipLayout(lg.items.length, availW);
+      y += 16; f.chipsY = y; y += f.cr.rows * 26 + 6;
+      f.selIdx = Math.min(S.seqDocSel[n.id] || 0, lg.items.length - 1);
+      walk(lg.items[f.selIdx]);
+    } else n.children.forEach(walk);
     y += 4; f.y1 = y; frames.push(f); y += 12;
   })(S.root);
   const H = y + 20;
   const p = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>
     <marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 9 5 1 9z" fill="#334155"/></marker>
-    <marker id="sb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="#94a3b8" stroke-width="1.5"/></marker></defs>`];
+    <marker id="sb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 9 5 1 9" fill="none" stroke="#94a3b8" stroke-width="1.5"/></marker>
+    <marker id="sc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 9 5 1 9z" fill="#c2410c"/></marker></defs>`];
   frames.sort((a, b) => a.d - b.d).forEach((f) => {
     const [bc, bf] = BRANCH[f.n.branch], x = 6 + f.d * 10;
     p.push(`<g class="sr${S.sel === f.n.id ? ' sel' : ''}" data-id="${f.n.id}"><rect x="${x}" y="${f.y0}" width="${W - 2 * x}" height="${f.y1 - f.y0}" rx="10" fill="${f.d ? '#ffffff' : bf}" fill-opacity="${f.d ? 0.75 : 0.55}" stroke="${bc}" stroke-opacity=".4"/>
       <text x="${x + 12}" y="${f.y0 + 19}" font-size="11.5" font-weight="650" fill="${bc}">${esc(trunc(f.n.name, 96))}</text></g>`);
+    if (f.loop) {
+      const items = f.loop.items, lx = x + 12;
+      p.push(`<rect x="${lx}" y="${f.y0 + 24}" width="${Math.min(300, W - 2 * x - 24)}" height="16" rx="8" fill="#fed7aa" opacity=".6"/>
+        <text x="${lx + 7}" y="${f.y0 + 36}" font-size="10" font-weight="700" fill="#c2410c" letter-spacing=".03em">↻ LOOP ×${items.length} — same ${items[0].children.length} calls repeat once per unique document, click a doc below to preview it</text>`);
+      const { chipW, gap, perRow } = f.cr;
+      items.forEach((it, i) => {
+        const row = Math.floor(i / perRow), col = i % perRow;
+        const cx = lx + col * (chipW + gap), cy = f.chipsY + row * 26, sel = i === f.selIdx;
+        p.push(`<g class="docchip" data-group="${f.n.id}" data-idx="${i}"><rect x="${cx}" y="${cy}" width="${chipW}" height="20" rx="6" fill="${sel ? '#eef2ff' : '#fff'}" stroke="${sel ? '#6366f1' : '#d8dbe4'}"/>
+          <text x="${cx + chipW / 2}" y="${cy + 14}" text-anchor="middle" font-size="9.5" font-weight="${sel ? 700 : 500}" fill="${sel ? '#4338ca' : '#475569'}">${esc(trunc(it.name.replace(/^Doc\s*\d+\s*—\s*/, ''), 17))}</text></g>`);
+      });
+    }
   });
   const lifeY = 50;
   [['Client', CX, 'this tool / your backend']].concat(hosts.map((h) => [h, hx(h), 'API'])).forEach(([label, x, sub]) => {
@@ -785,16 +835,20 @@ function renderSeq() {
   });
   rows.forEach(({ n, y }) => {
     const r = resOf(n), st = stOf(n), x2 = hx(hostOf(n)), mc = M_COLOR[mClass(n.method)], d = n.depth - 1, nx = 18 + d * 10;
+    const poll = pollInfoOf(n);
     const sub = n._src ? `↳ uses ID from #${n._src.node.order} ${trunc(n._src.node.name, 26)}` : trunc(n.desc.replace(/\s+/g, ' '), 46);
     const resp = S.running.has(n.id) ? 'running…' : !r ? 'not run yet' : r.error ? trunc(r.error, 52) : `${r.status} ${r.statusText || ''} · ${fmtMs(r.timeMs)} · ${fmtBytes(r.size)}`;
+    const rowH = poll ? 58 : 52;
     p.push(`<g class="sr${S.sel === n.id ? ' sel' : ''}" data-id="${n.id}"><title>${esc(n.name)}\n${esc(n.method + ' ' + urlTpl(n))}</title>
-      <rect class="bg" x="${nx - 6}" y="${y - 2}" width="${W - 2 * (nx - 6)}" height="52" rx="8"/>
+      <rect class="bg" x="${nx - 6}" y="${y - 2}" width="${W - 2 * (nx - 6)}" height="${rowH}" rx="8"/>
       <circle cx="${nx + 12}" cy="${y + 17}" r="11" fill="#fff" stroke="${ST_COLOR[st]}" stroke-width="2"/><text x="${nx + 12}" y="${y + 21}" text-anchor="middle" font-size="10.5" font-weight="650" fill="#334155">${n.order}</text>
       <text x="${nx + 32}" y="${y + 17}" font-size="12.5" font-weight="600" fill="#0f172a">${esc(trunc(n.name, 38 - d * 2))}</text>
       <text x="${nx + 32}" y="${y + 33}" font-size="11" fill="${n._src ? '#a21caf' : '#8b93a1'}">${esc(sub)}</text>
       <line x1="${CX}" y1="${y + 17}" x2="${x2 - 2}" y2="${y + 17}" stroke="#334155" stroke-width="1.5" marker-end="url(#sa)"/>
       <text x="${CX + 12}" y="${y + 11}" font-size="11" font-family="ui-monospace,Menlo,monospace"><tspan font-weight="700" fill="${mc}">${n.method}</tspan><tspan fill="#334155"> ${esc(trunc(pathLabel(n), Math.floor((x2 - CX) / 7.1) - 6))}</tspan></text>
-      <line x1="${x2}" y1="${y + 39}" x2="${CX + 2}" y2="${y + 39}" stroke="${st === 'idle' ? '#cbd5e1' : ST_COLOR[st]}" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sb)"/>
+      <line x1="${x2}" y1="${y + 39}" x2="${CX + 2}" y2="${y + 39}" stroke="${st === 'idle' ? '#cbd5e1' : ST_COLOR[st]}" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sb)"/>${poll ? `
+      <path d="M ${CX + 16} ${y + 17} a9,9 0 1 1 -0.01 0" fill="none" stroke="#c2410c" stroke-width="1.5" marker-end="url(#sc)"/>
+      <text x="${CX + 30}" y="${y + 52}" font-size="10" font-weight="600" fill="#c2410c">↻ repeats${poll.every ? ` ~${poll.every}s` : ''}${poll.max ? ` up to ${poll.max}×` : ''} until the response is ready</text>` : ''}
       <text x="${x2 - 12}" y="${y + 34}" text-anchor="end" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="${st === 'idle' ? '#9aa1ae' : ST_COLOR[st]}" font-weight="${st === 'idle' ? 400 : 600}">${esc(resp)}</text></g>`);
   });
   p.push('</svg>');
@@ -1093,7 +1147,11 @@ $('#tree').addEventListener('click', (e) => {
 });
 $('#views').addEventListener('click', (e) => { const v = e.target.dataset.v; if (v) { S.view = v; renderDiagram(); syncHash(); if (v === 'map') fitMap(); } });
 $('#stats').addEventListener('click', (e) => { if (e.target.closest('#tLinks')) { S.showLinks = !S.showLinks; renderStats(); renderDiagram(); } });
-$('#seq').addEventListener('click', (e) => { const g = e.target.closest('.sr'); if (g) select(g.dataset.id); });
+$('#seq').addEventListener('click', (e) => {
+  const chip = e.target.closest('.docchip');
+  if (chip) { S.seqDocSel[chip.dataset.group] = +chip.dataset.idx; return renderSeq(); }
+  const g = e.target.closest('.sr'); if (g) select(g.dataset.id);
+});
 $('#bVars').onclick = () => openVars();
 $('#bBanner').onclick = () => openVars();
 $('#bMore').onclick = openMore;
@@ -1144,6 +1202,25 @@ $('#insp').addEventListener('click', (e) => {
     if (e.ctrlKey || e.metaKey) { const r = el.getBoundingClientRect(); zoomBy(Math.exp(-e.deltaY * 0.01), e.clientX - r.left, e.clientY - r.top); }
     else { S.z.x -= e.deltaX; S.z.y -= e.deltaY; applyZ(); }
   }, { passive: false });
+})();
+
+/* sidebar resize */
+(() => {
+  const sp = $('#sidesplit'); let on = false;
+  const saved = localStorage.getItem('gobiman.sw');
+  if (saved) document.documentElement.style.setProperty('--sw', saved + 'px');
+  sp.addEventListener('mousedown', (e) => { on = true; sp.classList.add('on'); e.preventDefault(); });
+  window.addEventListener('mousemove', (e) => {
+    if (!on) return;
+    const w = Math.max(180, Math.min(window.innerWidth * 0.7, e.clientX));
+    document.documentElement.style.setProperty('--sw', w + 'px');
+  });
+  window.addEventListener('mouseup', () => {
+    if (!on) return;
+    on = false; sp.classList.remove('on');
+    localStorage.setItem('gobiman.sw', parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sw')) || 292);
+  });
+  sp.addEventListener('dblclick', () => { document.documentElement.style.removeProperty('--sw'); localStorage.removeItem('gobiman.sw'); });
 })();
 
 /* inspector resize */
