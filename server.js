@@ -236,8 +236,15 @@ const server = http.createServer(async (req, res) => {
     }
     const u = new URL(req.url, `http://${req.headers.host}`);
     try {
-        if (req.method === 'GET' && (u.pathname === '/' || u.pathname === '/index.html')) {
-            return send(res, 200, fs.readFileSync(path.join(__dirname, 'index.html')), 'text/html; charset=utf-8', HOSTED ? SECURITY : {});
+        // Hosted, the front page is about.html (what it is, try it, clone it) and the tool lives at /app.
+        // Locally the tool is the front page, as always; /app works there too.
+        if (req.method === 'GET' && (u.pathname === '/' || u.pathname === '/index.html' || u.pathname === '/app' || u.pathname === '/app/')) {
+            const about = HOSTED && (u.pathname === '/' || u.pathname === '/index.html');
+            return send(res, 200, fs.readFileSync(path.join(__dirname, about ? 'about.html' : 'index.html')), 'text/html; charset=utf-8', HOSTED ? SECURITY : {});
+        }
+        if (req.method === 'GET' && /^\/docs\/[a-z0-9-]+\.jpg$/.test(u.pathname)) {
+            let img; try { img = fs.readFileSync(path.join(__dirname, 'docs', path.basename(u.pathname))); } catch (e) { return send(res, 404, { error: 'not found' }); }
+            return send(res, 200, img, 'image/jpeg', { 'Cache-Control': 'public, max-age=86400' });
         }
         if (req.method === 'GET' && u.pathname === '/health') return send(res, 200, { ok: true, hosted: HOSTED, sessions: sessions.size });
         if (!u.pathname.startsWith('/api/')) return send(res, 404, { error: 'not found' });

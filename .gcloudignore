@@ -2,7 +2,6 @@
 .git
 .env
 .DS_Store
-docs
 node_modules
 *.log
 collections/*

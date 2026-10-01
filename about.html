@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gobiman: a Postman collection as a map you can run</title>
+<meta name="description" content="Gobiman turns any Postman collection into an interactive mind map and sequence diagram, runs the requests, and lets you search every response. Try it in the browser, or clone it: one HTML file and one Node file.">
+<meta property="og:title" content="Gobiman: a Postman collection as a map you can run">
+<meta property="og:description" content="Mind map, sequence diagram, and a searchable viewer for every response. Try it in the browser or clone it.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/docs/mindmap.jpg">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Ccircle cx='9' cy='16' r='3' fill='%23fff'/%3E%3Ccircle cx='23' cy='9' r='3' fill='%23fff'/%3E%3Ccircle cx='23' cy='23' r='3' fill='%23fff'/%3E%3Cpath d='M12 16h4M16 16c3 0 3-7 6-7M16 16c3 0 3 7 6 7' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--accent:#4f46e5;--accent-deep:#3730a3;--ink:#0f172a;--ink2:#475569;--muted:#64748b;--line:#e2e8f0;--soft:#f1f5f9;--bg:#ffffff;--card:#f8fafc;--ok:#16a34a}
+@media (prefers-color-scheme:dark){:root{--ink:#e2e8f0;--ink2:#cbd5e1;--muted:#94a3b8;--line:#1e293b;--soft:#1e293b;--bg:#0b1220;--card:#111a2e;--accent:#818cf8;--accent-deep:#a5b4fc}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-deep);text-decoration:none}a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--soft);padding:1px 6px;border-radius:5px}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:12px 24px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;color:var(--ink)}
+.brand i{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--accent);color:#fff}
+.top nav{margin-left:auto;display:flex;gap:18px;font-size:14px;font-weight:500}
+.top nav a{color:var(--ink2)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:10px;font-weight:600;font-size:15px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none!important;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+.btn:hover{border-color:var(--accent)}
+.top .btn{height:36px;padding:0 14px;font-size:14px}
+main{max-width:1040px;margin:0 auto;padding:0 24px 80px}
+.hero{padding:64px 0 28px;max-width:760px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--accent-deep)}
+h1{font-size:clamp(34px,5vw,56px);line-height:1.05;letter-spacing:-.025em;margin-top:14px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{margin-top:20px;font-size:19px;color:var(--ink2);max-width:60ch}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fine{margin-top:12px;font-size:13.5px;color:var(--muted)}
+figure{margin:28px 0 0}
+figure img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);box-shadow:0 20px 50px -30px rgba(15,23,42,.45);background:#fff}
+figcaption{margin-top:10px;font-size:13.5px;color:var(--muted);text-align:center}
+h2{font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin-top:64px;max-width:26ch}
+p{margin-top:14px;color:var(--ink2)}
+p b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+.grid div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.grid h3{font-size:17px;margin-bottom:6px}
+.grid p{margin-top:4px;font-size:14.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+.two>div{border-radius:14px;padding:20px 22px;border:1px solid var(--line);background:var(--card)}
+.two h3{font-size:18px;display:flex;align-items:center;gap:8px}
+.two ul{margin:10px 0 0 18px;color:var(--ink2);font-size:14.5px;display:grid;gap:6px}
+.two .btn{margin-top:16px}
+pre{margin-top:16px;background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+.foot{margin-top:72px;padding-top:22px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 22px}
+@media (max-width:720px){.top{padding:10px 16px}.top nav{display:none}main{padding:0 16px 60px}.hero{padding-top:36px}.grid,.two{grid-template-columns:1fr}.lede{font-size:17px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/"><i><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="3.5" cy="8" r="1.8"/><circle cx="12.5" cy="3.5" r="1.8"/><circle cx="12.5" cy="12.5" r="1.8"/><path d="M5.3 8h2M7.3 8c2 0 2-4.5 3.4-4.5M7.3 8c2 0 2 4.5 3.4 4.5"/></svg></i>Gobiman</a>
+  <nav><a href="#what">What you get</a><a href="#try">Try or clone</a><a href="#how">How it works</a><a href="https://github.com/madhudream/gobiman" rel="noopener">GitHub</a></nav>
+  <a class="btn pri" href="/app">Try it</a>
+</header>
+<main>
+  <section class="hero">
+    <p class="eyebrow">Open source · Node 18+, no npm install</p>
+    <h1>A Postman collection is a map. <em>Gobiman draws it, runs it, and lets you search what came back.</em></h1>
+    <p class="lede">Every API team has a Postman collection: a hundred requests in folders, each with a URL and a token. Postman shows it as a list. Gobiman shows it as what it is: a tree of calls that happen in an order, each one feeding the next, with the responses right there to read.</p>
+    <div class="cta"><a class="btn pri" href="/app">Try it in the browser</a><a class="btn" href="https://github.com/madhudream/gobiman" rel="noopener">Clone it from GitHub</a></div>
+    <p class="fine">Two demo collections against public APIs are loaded, or drop your own on the page. Nothing you import or run is stored.</p>
+  </section>
+
+  <figure><img src="/docs/mindmap.jpg" alt="The mind map after a run: the collection in the centre, folders, and every request with its status, time and size" width="1600" height="1000"><figcaption>The mind map after a run. Collection → folders → requests; every node carries its status, time and size.</figcaption></figure>
+
+  <h2 id="what">What you get</h2>
+  <div class="grid">
+    <div><h3>A mind map</h3><p>The collection as a collapsible tree. After a run, each request shows status, time and size. Dashed arrows appear where an ID hard-coded in one request first appeared in an earlier response: the map shows which call feeds which.</p></div>
+    <div><h3>A sequence diagram</h3><p>Client ↔ API in call order, grouped by folder, with the path on the request arrow and the status on the response. Loops in a folder are drawn as loops. The whiteboard picture, drawn for you.</p></div>
+    <div><h3>An inspector with a real JSON viewer</h3><p>Resolved URL with variables highlighted, headers, body, scripts and the raw Postman JSON. The response opens as a collapsible tree: depth 1/2/3/all, search, copy value, copy JSONPath.</p></div>
+    <div><h3>Search across everything</h3><p>⌘K searches request names, URLs, descriptions and the full text of every response you have run, then jumps to the match inside the JSON.</p></div>
+  </div>
+
+  <figure><img src="/docs/sequence.jpg" alt="The sequence diagram: a Client lifeline and an API lifeline, numbered calls grouped by folder, with paths and statuses on the arrows" width="1600" height="1000" loading="lazy"><figcaption>The same run as a sequence diagram: each folder a band, each call an arrow out and a dashed arrow back.</figcaption></figure>
+  <figure><img src="/docs/inspector.jpg" alt="The inspector open on one request: resolved URL, 200 OK with time and size, and the response as a collapsible JSON tree" width="1600" height="1000" loading="lazy"><figcaption>Click a node and the inspector opens, with the response as a tree you can search and copy from.</figcaption></figure>
+
+  <h2 id="try">Try it here, or run it on your machine</h2>
+  <div class="two">
+    <div>
+      <h3>Try it here</h3>
+      <ul>
+        <li>Pick a demo workspace, or drop your own collection and environment files on the page. They stay in your browser.</li>
+        <li>Every browser gets its own in-memory session; nobody sees anybody else's. A session is dropped after two hours of silence. Nothing is ever stored.</li>
+        <li>The hosted copy calls the public internet only: an API on your own network will not answer from here.</li>
+        <li>A token you type into Variables lives in that session and nowhere else. Fine for an afternoon with a public API; not for credentials that matter.</li>
+      </ul>
+      <a class="btn pri" href="/app">Open the tool</a>
+    </div>
+    <div>
+      <h3>Run it on your machine</h3>
+      <ul>
+        <li>One HTML file and one Node file. No npm install, no account.</li>
+        <li>The server binds to 127.0.0.1 only and rejects other origins; tokens are held in memory and never written to disk.</li>
+        <li>Every folder of Postman files is a workspace; an environment file beside the collection fills its variables.</li>
+        <li>This is the right choice for a private API, or any token you would not paste into a website.</li>
+      </ul>
+      <pre><code>git clone https://github.com/madhudream/gobiman
+cd gobiman
+node server.js      # → http://localhost:4600</code></pre>
+    </div>
+  </div>
+
+  <h2 id="how">How it works</h2>
+  <p><b>The server is a proxy, and only that.</b> The browser cannot call most APIs directly because of CORS, so the page sends each request to the server, which makes the call and returns body, headers and timing. There is no database and no build step; the whole app is <code>index.html</code>, the whole server is <code>server.js</code>.</p>
+  <p><b>Data links are computed, not configured.</b> After a run, Gobiman collects every ID-like value in every response and looks for the same values hard-coded in later request URLs; where it finds one it draws a dashed arrow from the response that produced it to the request that uses it.</p>
+  <p><b>Hosted mode is one flag.</b> <code>GOBIMAN_HOSTED=1</code> makes the same server listen on every interface, keep one session per browser, refuse private and link-local addresses on every redirect hop, cap a response at 8 MB and 30 seconds, and allow 90 runs a minute per client. The repository ships a Dockerfile and a Cloud Run deploy script, so you can host your own copy in minutes.</p>
+  <p>It reads Postman Collection v2 and v2.1: folders, raw, urlencoded and GraphQL bodies, collection- and request-level bearer and basic auth, collection and environment variables. Test scripts are shown but not executed. The URL hash is a shareable deep link: <code>/app#ws=demo-jsonplaceholder&amp;sel=1-2&amp;view=seq</code>.</p>
+  <div class="cta"><a class="btn pri" href="/app">Try it in the browser</a><a class="btn" href="https://github.com/madhudream/gobiman" rel="noopener">Source on GitHub</a></div>
+
+  <footer class="foot"><span>Gobiman is open source (<a href="https://github.com/madhudream/gobiman" rel="noopener">github.com/madhudream/gobiman</a>).</span><span>Found a collection it draws wrong? Open an issue.</span></footer>
+</main>
+</body>
+</html>

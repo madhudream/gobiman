@@ -69,7 +69,8 @@ Hosted mode listens on every interface, gives each browser its own in-memory ses
 variables or responses), refuses to call loopback, private, link-local and cloud-metadata addresses (each redirect
 hop is checked again), caps a response at 8 MB and 30 s, allows 90 runs a minute per client, and drops a session
 after two hours of silence. Nothing is ever stored, and the service holds no secrets of its own. Collections you
-import stay in your browser; only the requests you run go through the server.
+import stay in your browser; only the requests you run go through the server. Hosted, the front page is
+`about.html` (what it is, try it, clone it) and the tool is at `/app`; locally the tool is the front page.
 
 That is enough to try it against a public API, or your own public API with a token you are happy to type into a
 website for an afternoon. For an API on your network, or with credentials that matter, clone and run it locally.
