@@ -1,0 +1,8 @@
+# Build the image in Cloud Build; scripts/deploy.sh passes the repository and tag.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/gobiman:${_TAG}", "."]
+images: ["${_REPO}/gobiman:${_TAG}"]
+substitutions:
+  _REPO: ""
+  _TAG: latest

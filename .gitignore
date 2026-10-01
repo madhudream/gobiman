@@ -8,3 +8,4 @@ collections/*
 *.log
 node_modules/
 .env
+.deploy-build.log

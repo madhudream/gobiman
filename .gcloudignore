@@ -1,0 +1,10 @@
+# What Cloud Build may see. Your own collections never leave this machine: only the demo workspaces go.
+.git
+.env
+.DS_Store
+docs
+node_modules
+*.log
+collections/*
+!collections/demo-petstore/
+!collections/demo-jsonplaceholder/

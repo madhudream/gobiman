@@ -62,6 +62,21 @@ GOBIMAN_VAR_apiToken=eyJ... node server.js
 
 The URL hash (`#ws=demo-jsonplaceholder&sel=1-2&view=seq`) is a shareable deep link.
 
+## Hosted: try it without installing
+
+The same server runs on the public internet at [gobiman.carebun.com](https://gobiman.carebun.com) with `GOBIMAN_HOSTED=1`.
+Hosted mode listens on every interface, gives each browser its own in-memory session (nobody sees anybody else's
+variables or responses), refuses to call loopback, private, link-local and cloud-metadata addresses (each redirect
+hop is checked again), caps a response at 8 MB and 30 s, allows 90 runs a minute per client, and drops a session
+after two hours of silence. Nothing is ever stored, and the service holds no secrets of its own. Collections you
+import stay in your browser; only the requests you run go through the server.
+
+That is enough to try it against a public API, or your own public API with a token you are happy to type into a
+website for an afternoon. For an API on your network, or with credentials that matter, clone and run it locally.
+
+Deploy your own copy to Cloud Run: `GCP_PROJECT=<your project> bash scripts/deploy.sh --setup` once, then
+`bash scripts/deploy.sh` (see the script for the variables; `.gcloudignore` sends only the demo workspaces).
+
 ## How it works
 
 - `server.js` — Node HTTP server, ~170 lines. Serves the page, scans the workspaces, and proxies the API calls so the browser isn't blocked by CORS. Binds to `127.0.0.1` only and rejects cross-origin callers, so nothing else on the network or in other browser tabs can use it.
