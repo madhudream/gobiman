@@ -23,6 +23,8 @@ gobiman/collections/
 │   └── Accrual-Local.postman_environment.json
 ├── demo-petstore/                            ← workspace (public API, works without a token)
 │   └── petstore.postman_collection.json
+├── demo-jsonplaceholder/                     ← workspace (public API, 8 read-only requests in 4 folders)
+│   └── jsonplaceholder.postman_collection.json
 └── my-api/                                   ← add your own
     ├── something.postman_collection.json
     └── something.postman_environment.json

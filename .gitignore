@@ -2,6 +2,7 @@
 # Only the public demo workspace is committed so newcomers have something to click.
 collections/*
 !collections/demo-petstore/
+!collections/demo-jsonplaceholder/
 
 .DS_Store
 *.log
