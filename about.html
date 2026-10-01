@@ -18,7 +18,7 @@
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:var(--accent-deep);text-decoration:none}a:hover{text-decoration:underline}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--soft);padding:1px 6px;border-radius:5px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;overflow-wrap:anywhere;background:var(--soft);padding:1px 6px;border-radius:5px}
 .top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:12px 24px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;color:var(--ink)}
 .brand i{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--accent);color:#fff}
@@ -37,22 +37,22 @@ h1 em{font-style:normal;color:var(--accent)}
 .lede{margin-top:20px;font-size:19px;color:var(--ink2);max-width:60ch}
 .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
 .fine{margin-top:12px;font-size:13.5px;color:var(--muted)}
-figure{margin:28px 0 0}
+figure{margin:28px 0 0;min-width:0}
 figure img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);box-shadow:0 20px 50px -30px rgba(15,23,42,.45);background:#fff}
 figcaption{margin-top:10px;font-size:13.5px;color:var(--muted);text-align:center}
 h2{font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin-top:64px;max-width:26ch}
 p{margin-top:14px;color:var(--ink2)}
 p b{color:var(--ink)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
-.grid div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.grid div{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 .grid h3{font-size:17px;margin-bottom:6px}
 .grid p{margin-top:4px;font-size:14.5px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
-.two>div{border-radius:14px;padding:20px 22px;border:1px solid var(--line);background:var(--card)}
+.two>div{min-width:0;border-radius:14px;padding:20px 22px;border:1px solid var(--line);background:var(--card)}
 .two h3{font-size:18px;display:flex;align-items:center;gap:8px}
 .two ul{margin:10px 0 0 18px;color:var(--ink2);font-size:14.5px;display:grid;gap:6px}
 .two .btn{margin-top:16px}
-pre{margin-top:16px;background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+pre{max-width:100%;margin-top:16px;background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
 .foot{margin-top:72px;padding-top:22px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 22px}
 @media (max-width:720px){.top{padding:10px 16px}.top nav{display:none}main{padding:0 16px 60px}.hero{padding-top:36px}.grid,.two{grid-template-columns:1fr}.lede{font-size:17px}}
 </style>
