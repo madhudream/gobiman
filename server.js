@@ -25,6 +25,12 @@ const net = require('net');
 const crypto = require('crypto');
 
 const HOSTED = /^(1|true|yes)$/i.test(process.env.GOBIMAN_HOSTED || '');
+// An optional "apps" launcher from the site that hosts Gobiman: a script to add to every page, and the
+// custom element it defines (placed in the top bar, where <span id="launcher"> is). Any site can set
+// its own; the open-source pages carry no site's branding by themselves.
+const LAUNCHER_URL = process.env.GOBIMAN_LAUNCHER_URL || '';
+const LAUNCHER_ELEMENT = /^[a-z][a-z0-9]*-[a-z0-9-]+$/.test(process.env.GOBIMAN_LAUNCHER_ELEMENT || '') ? process.env.GOBIMAN_LAUNCHER_ELEMENT : '';
+let launcherOrigin = ''; try { launcherOrigin = LAUNCHER_URL ? new URL(LAUNCHER_URL).origin : ''; } catch (e) {}
 const ROOT = path.resolve(process.argv[2] || path.join(__dirname, 'collections'));
 const PORT = Number(process.env.GOBIMAN_PORT || process.env.PORT) || 4600;
 const HOST = HOSTED ? '0.0.0.0' : '127.0.0.1';
@@ -177,8 +183,17 @@ function readJson(req) {
 }
 const SECURITY = {
     'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:; object-src 'self' blob:; base-uri 'self'; form-action 'self'",
+    'Content-Security-Policy': `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' ${launcherOrigin}; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:; object-src 'self' blob:; base-uri 'self'; form-action 'self'`.replace('  ', ' '),
 };
+// a page from disk, with the host site's launcher added when one is configured
+function page(file) {
+    let html = fs.readFileSync(path.join(__dirname, file), 'utf8');
+    if (LAUNCHER_URL) {
+        if (LAUNCHER_ELEMENT) html = html.replace('<span id="launcher"></span>', `<${LAUNCHER_ELEMENT}></${LAUNCHER_ELEMENT}>`);
+        html = html.replace('</body>', `<script src="${LAUNCHER_URL.replace(/"/g, '&quot;')}" defer></script>\n</body>`);
+    }
+    return html;
+}
 const isText = (ct) => !ct || /json|text|xml|javascript|html|urlencoded|csv|yaml/i.test(ct);
 
 async function runRequest(session, { key, method, url, headers, body }) {
@@ -240,7 +255,7 @@ const server = http.createServer(async (req, res) => {
         // Locally the tool is the front page, as always; /app works there too.
         if (req.method === 'GET' && (u.pathname === '/' || u.pathname === '/index.html' || u.pathname === '/app' || u.pathname === '/app/')) {
             const about = HOSTED && (u.pathname === '/' || u.pathname === '/index.html');
-            return send(res, 200, fs.readFileSync(path.join(__dirname, about ? 'about.html' : 'index.html')), 'text/html; charset=utf-8', HOSTED ? SECURITY : {});
+            return send(res, 200, page(about ? 'about.html' : 'index.html'), 'text/html; charset=utf-8', HOSTED ? SECURITY : {});
         }
         if (req.method === 'GET' && /^\/docs\/[a-z0-9-]+\.jpg$/.test(u.pathname)) {
             let img; try { img = fs.readFileSync(path.join(__dirname, 'docs', path.basename(u.pathname))); } catch (e) { return send(res, 404, { error: 'not found' }); }

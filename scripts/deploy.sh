@@ -9,6 +9,7 @@
 #   GCP_REGION    default us-central1
 #   GCP_SERVICE   default gobiman
 #   GCP_REPO      default <region>-docker.pkg.dev/<project>/apps   (an Artifact Registry repository)
+#   GOBIMAN_LAUNCHER_URL, GOBIMAN_LAUNCHER_ELEMENT   optional: your site's apps launcher (see server.js)
 # The service runs with GOBIMAN_HOSTED=1 (see server.js) and holds no secrets at all.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -32,7 +33,7 @@ gcloud builds submit --project "$PROJECT" --config cloudbuild.yaml --substitutio
 echo "· deploy"
 gcloud run deploy "$SERVICE" --project "$PROJECT" --region "$REGION" --image "$REPO/gobiman:$TAG" --service-account "$SA" \
   --allow-unauthenticated --port 8080 --cpu 1 --memory 256Mi --max-instances 2 --min-instances 0 --cpu-boost --concurrency 80 \
-  --set-env-vars "GOBIMAN_HOSTED=1" --quiet
+  --set-env-vars "^|^GOBIMAN_HOSTED=1|GOBIMAN_LAUNCHER_URL=${GOBIMAN_LAUNCHER_URL:-}|GOBIMAN_LAUNCHER_ELEMENT=${GOBIMAN_LAUNCHER_ELEMENT:-}" --quiet
 URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format 'value(status.url)')
 echo "· health"; curl -s "$URL/health"; echo
 echo "live: $URL"

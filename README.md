@@ -75,6 +75,10 @@ import stay in your browser; only the requests you run go through the server. Ho
 That is enough to try it against a public API, or your own public API with a token you are happy to type into a
 website for an afternoon. For an API on your network, or with credentials that matter, clone and run it locally.
 
+If the site that hosts it has an "apps" launcher, `GOBIMAN_LAUNCHER_URL` (a script) and `GOBIMAN_LAUNCHER_ELEMENT`
+(the custom element it defines) put it in the top bar of both pages; the logo and an About button in the tool lead
+back to the front page.
+
 Deploy your own copy to Cloud Run: `GCP_PROJECT=<your project> bash scripts/deploy.sh --setup` once, then
 `bash scripts/deploy.sh` (see the script for the variables; `.gcloudignore` sends only the demo workspaces).
 
